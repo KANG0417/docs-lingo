@@ -1,0 +1,11 @@
+export const DOCUMENT_FETCH_TIMEOUT_MS = 15000;
+
+export const MIN_PARAGRAPH_LENGTH = 24;
+
+export const MAX_PARAGRAPHS_FOR_AI = 40;
+
+export const MAX_AI_INPUT_LENGTH = 10000;
+
+export const ENABLE_IMPORTANCE_FILTER = true;
+
+export const IMPORTANCE_SCORE_THRESHOLD = 0;
