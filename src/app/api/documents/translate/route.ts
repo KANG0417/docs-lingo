@@ -43,7 +43,11 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   try {
-    const result = await translateDocumentFromUrl(session.user.id, url);
+    const result = await translateDocumentFromUrl(
+      session.user.id,
+      url,
+      session.user.name,
+    );
     return NextResponse.json(result);
   } catch (error) {
     const translationError = toTranslationError(error);

@@ -1,7 +1,5 @@
+import { normalizeSummaryTerms } from "@/lib/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
-
-const MAX_SUMMARY_TERMS = 8;
-const MAX_CORE_KEYWORDS = 4;
 
 const normalizeTerm = (term: string): string => {
   return term.replace(/^[`"'[\(]+|[`"'\]\)]+$/g, "").trim();
@@ -73,10 +71,5 @@ export const extractKeywordTermsFallback = (
     });
   });
 
-  const sortedTerms = [...uniqueTerms.values()].slice(0, MAX_SUMMARY_TERMS);
-
-  return sortedTerms.map((item, index) => ({
-    ...item,
-    isCoreKeyword: index < MAX_CORE_KEYWORDS,
-  }));
+  return normalizeSummaryTerms([...uniqueTerms.values()]);
 };

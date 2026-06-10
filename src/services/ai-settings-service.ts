@@ -1,4 +1,4 @@
-import { DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER } from "@/constants/ai-providers";
+import { AUTO_AI_MODEL, DEFAULT_AI_PROVIDER } from "@/constants/ai-providers";
 import { isValidGeminiApiKeyFormat } from "@/lib/gemini-api-key";
 import { maskApiKey } from "@/lib/mask-api-key";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -19,7 +19,7 @@ const mapUserAiSettings = (row: AiSettingsRow | null): UserAiSettings => {
   if (!row) {
     return {
       provider: DEFAULT_AI_PROVIDER,
-      model: DEFAULT_AI_MODEL,
+      model: AUTO_AI_MODEL,
       hasApiKey: false,
       maskedApiKey: null,
     };
@@ -29,7 +29,7 @@ const mapUserAiSettings = (row: AiSettingsRow | null): UserAiSettings => {
 
   return {
     provider: row.provider as UserAiSettings["provider"],
-    model: row.model?.trim() || DEFAULT_AI_MODEL,
+    model: AUTO_AI_MODEL,
     hasApiKey: Boolean(apiKey),
     maskedApiKey: apiKey ? maskApiKey(apiKey) : null,
   };
@@ -64,7 +64,7 @@ export const getUserAiCredentials = async (
 
   const { data, error } = await supabase
     .from("user_ai_settings")
-    .select("provider, api_key, model")
+    .select("provider, api_key")
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -75,7 +75,6 @@ export const getUserAiCredentials = async (
   return {
     provider: data.provider as UserAiCredentials["provider"],
     apiKey: data.api_key.trim(),
-    model: data.model?.trim() ?? null,
   };
 };
 
@@ -86,11 +85,6 @@ export const updateUserAiSettings = async (
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
     throw new Error("Supabase 연결이 설정되지 않았습니다.");
-  }
-
-  const trimmedModel = payload.model.trim();
-  if (!trimmedModel) {
-    throw new Error("AI 모델명을 입력해주세요.");
   }
 
   const { data: existingSettings } = await supabase
@@ -121,7 +115,7 @@ export const updateUserAiSettings = async (
       {
         user_id: userId,
         provider: payload.provider,
-        model: trimmedModel,
+        model: AUTO_AI_MODEL,
         api_key: nextApiKey,
         updated_at: new Date().toISOString(),
       },

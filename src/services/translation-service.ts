@@ -4,6 +4,7 @@ import {
   TranslationError,
   toTranslationError,
 } from "@/lib/translation-errors";
+import { ensureUserProfileExists } from "@/services/profile-service";
 import { getUserAiCredentials } from "@/services/ai-settings-service";
 import { getSupabaseAdminClient } from "@/lib/supabase-admin";
 import type {
@@ -85,25 +86,53 @@ export const saveTranslation = async ({
     .single();
 
   if (documentError || !documentRow) {
+    console.error("[saveTranslation] document", documentError?.message);
     throw new Error("문서 저장에 실패했습니다.");
   }
 
-  const { data: translationRow, error: translationError } = await supabase
-    .from("translations")
-    .insert({
+  const insertTranslation = async (
+    includeExtendedColumns: boolean,
+  ): Promise<{ id: string; created_at: string } | null> => {
+    const basePayload = {
       user_id: userId,
       document_id: documentRow.id,
       content: translatedContent,
       source_lang: "en",
       target_lang: "ko",
-      summary_terms: summaryTerms,
-      original_content: originalContent,
-    })
-    .select("id, created_at")
-    .single();
+    };
 
-  if (translationError || !translationRow) {
-    throw new Error("번역 히스토리 저장에 실패했습니다.");
+    const payload = includeExtendedColumns
+      ? {
+          ...basePayload,
+          summary_terms: summaryTerms,
+          original_content: originalContent,
+        }
+      : basePayload;
+
+    const { data, error } = await supabase
+      .from("translations")
+      .insert(payload)
+      .select("id, created_at")
+      .single();
+
+    if (error) {
+      console.error("[saveTranslation] translation", error.message);
+      return null;
+    }
+
+    return data;
+  };
+
+  let translationRow = await insertTranslation(true);
+
+  if (!translationRow) {
+    translationRow = await insertTranslation(false);
+  }
+
+  if (!translationRow) {
+    throw new Error(
+      "번역 히스토리 저장에 실패했습니다.\nSupabase SQL Editor에서 supabase/migrations/20260610-translations-history.sql 을 실행해 주세요.",
+    );
   }
 
   return {
@@ -121,7 +150,10 @@ export const saveTranslation = async ({
 export const translateDocumentFromUrl = async (
   userId: string,
   url: string,
+  userNickname?: string | null,
 ): Promise<DocumentTranslationResult> => {
+  await ensureUserProfileExists(userId, userNickname?.trim() || "사용자");
+
   let refinedDocument: Awaited<ReturnType<typeof refineDocumentFromUrl>>;
 
   try {
@@ -213,7 +245,7 @@ export const getTranslationHistory = async (
     }
 
     throw new Error(
-      "번역 히스토리 테이블 마이그레이션이 필요합니다.\nSupabase SQL Editor에서 supabase/schema.sql을 실행해 주세요.",
+      "번역 히스토리 테이블 마이그레이션이 필요합니다.\nSupabase SQL Editor에서 supabase/migrations/20260610-translations-history.sql 을 실행해 주세요.",
     );
   }
 

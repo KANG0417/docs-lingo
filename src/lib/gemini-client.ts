@@ -1,12 +1,9 @@
-import {
-  GEMINI_DEFAULT_MODEL,
-  GEMINI_FALLBACK_MODELS,
-  GEMINI_MAX_RETRY_COUNT,
-} from "@/constants/gemini";
+import { GEMINI_MAX_RETRY_COUNT } from "@/constants/gemini";
 import {
   createInvalidGeminiApiKeyMessage,
   isValidGeminiApiKeyFormat,
 } from "@/lib/gemini-api-key";
+import { resolveAutoGeminiModels } from "@/lib/gemini-model-resolver";
 import {
   normalizeGeminiError,
   TranslationError,
@@ -29,7 +26,6 @@ interface GeminiGenerateContentResponse {
 
 export interface GeminiClientConfig {
   apiKey: string;
-  model?: string | null;
 }
 
 interface GenerateGeminiOptions {
@@ -62,10 +58,7 @@ const resolveGeminiConfig = (
       throw createInvalidApiKeyError(true);
     }
 
-    return {
-      apiKey,
-      model: userCredentials.model,
-    };
+    return { apiKey };
   }
 
   const serverApiKey = getServerGeminiApiKey();
@@ -75,19 +68,7 @@ const resolveGeminiConfig = (
     throw createInvalidApiKeyError(false);
   }
 
-  return {
-    apiKey: serverApiKey,
-    model: process.env.GEMINI_MODEL?.trim() ?? null,
-  };
-};
-
-const getGeminiModelCandidates = (config: GeminiClientConfig): string[] => {
-  const preferredModel = config.model?.trim();
-  const candidates = preferredModel
-    ? [preferredModel, ...GEMINI_FALLBACK_MODELS]
-    : [GEMINI_DEFAULT_MODEL, ...GEMINI_FALLBACK_MODELS];
-
-  return [...new Set(candidates)];
+  return { apiKey: serverApiKey };
 };
 
 const sleep = (milliseconds: number): Promise<void> => {
@@ -110,6 +91,26 @@ const isQuotaError = (message: string): boolean => {
     loweredMessage.includes("rate limit") ||
     loweredMessage.includes("resource exhausted") ||
     loweredMessage.includes("limit: 0")
+  );
+};
+
+const shouldAbortAllModels = (error: TranslationError): boolean => {
+  return (
+    error.code === "GEMINI_INVALID_API_KEY" ||
+    error.code === "GEMINI_BILLING_DEPLETED" ||
+    error.code === "GEMINI_NO_API_KEY"
+  );
+};
+
+const shouldTryNextModel = (error: TranslationError): boolean => {
+  const loweredMessage = error.originalMessage.toLowerCase();
+
+  return (
+    error.code === "GEMINI_MODEL_NOT_FOUND" ||
+    loweredMessage.includes("no longer available") ||
+    loweredMessage.includes("not found") ||
+    loweredMessage.includes("is not supported") ||
+    isQuotaError(error.originalMessage)
   );
 };
 
@@ -188,10 +189,13 @@ const requestWithModelFallback = async (
     );
   }
 
-  const models = getGeminiModelCandidates(config);
+  const models = await resolveAutoGeminiModels(config.apiKey);
   let lastError: TranslationError | null = null;
+  let lastAttemptedModel: string | null = null;
 
   for (const model of models) {
+    lastAttemptedModel = model;
+
     for (let attempt = 0; attempt <= GEMINI_MAX_RETRY_COUNT; attempt += 1) {
       try {
         return await requestGemini(config, model, prompt, options);
@@ -205,6 +209,10 @@ const requestWithModelFallback = async (
 
         lastError = normalizedError;
 
+        if (shouldAbortAllModels(normalizedError)) {
+          throw normalizedError;
+        }
+
         if (
           isQuotaError(normalizedError.originalMessage) &&
           attempt < GEMINI_MAX_RETRY_COUNT
@@ -213,24 +221,27 @@ const requestWithModelFallback = async (
           continue;
         }
 
-        if (isQuotaError(normalizedError.originalMessage)) {
+        if (shouldTryNextModel(normalizedError)) {
           break;
         }
 
-        if (normalizedError.code === "GEMINI_INVALID_API_KEY") {
-          throw normalizedError;
-        }
-
-        throw normalizedError;
+        break;
       }
     }
   }
 
   throw (
     lastError ??
-    normalizeGeminiError(new Error("사용 가능한 Gemini 모델이 없습니다."), {
-      hasUserApiKey: Boolean(options?.userCredentials?.apiKey),
-    })
+    normalizeGeminiError(
+      new Error(
+        lastAttemptedModel
+          ? `사용 가능한 Gemini 모델이 없습니다. (마지막 시도: ${lastAttemptedModel})`
+          : "사용 가능한 Gemini 모델이 없습니다.",
+      ),
+      {
+        hasUserApiKey: Boolean(options?.userCredentials?.apiKey),
+      },
+    )
   );
 };
 

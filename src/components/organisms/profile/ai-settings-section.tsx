@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import type { FormEvent, ReactElement } from "react";
 import {
   AI_PROVIDER_OPTIONS,
-  DEFAULT_AI_MODEL,
   DEFAULT_AI_PROVIDER,
 } from "@/constants/ai-providers";
 import { useAiSettings } from "@/hooks/use-ai-settings";
@@ -21,7 +20,6 @@ export const AiSettingsSection = (): ReactElement => {
   } = useAiSettings();
 
   const [provider, setProvider] = useState<AiProvider>(DEFAULT_AI_PROVIDER);
-  const [model, setModel] = useState<string>(DEFAULT_AI_MODEL);
   const [apiKey, setApiKey] = useState<string>("");
 
   const selectedProvider = AI_PROVIDER_OPTIONS.find(
@@ -32,7 +30,6 @@ export const AiSettingsSection = (): ReactElement => {
     if (!settings) return;
 
     setProvider(settings.provider);
-    setModel(settings.model);
     setApiKey("");
   }, [settings]);
 
@@ -41,7 +38,6 @@ export const AiSettingsSection = (): ReactElement => {
 
     void saveSettings({
       provider,
-      model,
       apiKey: apiKey.trim() || undefined,
     });
   };
@@ -49,7 +45,6 @@ export const AiSettingsSection = (): ReactElement => {
   const handleClearApiKey = (): void => {
     void saveSettings({
       provider,
-      model,
       clearApiKey: true,
     });
     setApiKey("");
@@ -69,7 +64,7 @@ export const AiSettingsSection = (): ReactElement => {
         <header className="mb-5 border-b border-dashed border-amber-300 pb-4 text-center">
           <h2 className="text-lg font-bold text-amber-900">AI 도구 설정</h2>
           <p className="mt-1 text-sm text-amber-700/80">
-            본인의 AI API 키와 모델을 등록하면 번역에 사용됩니다.
+            API 키만 등록하면 모델은 자동으로 선택됩니다.
           </p>
         </header>
 
@@ -127,25 +122,13 @@ export const AiSettingsSection = (): ReactElement => {
               )}
             </label>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm font-semibold text-amber-900">
-                모델명
-              </span>
-              <input
-                type="text"
-                value={model}
-                onChange={(event) => setModel(event.target.value)}
-                placeholder={selectedProvider?.modelPlaceholder}
-                required
-                disabled={isSaving}
-                className="h-12 w-full rounded-md border border-dashed border-amber-400 bg-white/80 px-4 text-sm text-zinc-900 placeholder:text-amber-700/40 focus:border-solid focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-amber-100/50"
-              />
-              {selectedProvider && (
-                <span className="text-xs text-amber-700/70">
-                  추천: {selectedProvider.modelSuggestions.join(", ")}
-                </span>
-              )}
-            </label>
+            <div className="rounded-md border border-dashed border-amber-300 bg-white/70 px-4 py-3 text-sm text-amber-800">
+              <p className="font-semibold">모델 자동 선택</p>
+              <p className="mt-1 text-xs text-amber-700/80">
+                Gemini API에서 사용 가능한 모델을 조회한 뒤, 가장 적합한
+                Flash-Lite 모델부터 순서대로 시도합니다.
+              </p>
+            </div>
 
             {successMessage && (
               <p

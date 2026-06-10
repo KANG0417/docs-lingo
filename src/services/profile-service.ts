@@ -8,6 +8,39 @@ interface SyncUserProfileParams {
   image: string | null | undefined;
 }
 
+export const ensureUserProfileExists = async (
+  userId: string,
+  nickname = "사용자",
+): Promise<void> => {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    throw new Error("Supabase 연결이 설정되지 않았습니다.");
+  }
+
+  const { data: existingProfile, error: selectError } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (selectError) {
+    console.error("[ensureUserProfileExists]", selectError.message);
+    throw new Error("사용자 프로필을 확인하지 못했습니다.");
+  }
+
+  if (existingProfile) return;
+
+  const { error: insertError } = await supabase.from("profiles").insert({
+    id: userId,
+    nickname,
+  });
+
+  if (insertError) {
+    console.error("[ensureUserProfileExists]", insertError.message);
+    throw new Error("사용자 프로필을 생성하지 못했습니다.");
+  }
+};
+
 export const getUserProfile = async (
   userId: string,
 ): Promise<UserProfile | null> => {

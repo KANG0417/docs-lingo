@@ -74,7 +74,8 @@ const isModelNotFoundMessage = (message: string): boolean => {
   const loweredMessage = message.toLowerCase();
   return (
     loweredMessage.includes("not found") ||
-    loweredMessage.includes("is not supported")
+    loweredMessage.includes("is not supported") ||
+    loweredMessage.includes("no longer available")
   );
 };
 
@@ -154,7 +155,7 @@ export const normalizeGeminiError = (
   if (isModelNotFoundMessage(originalMessage)) {
     return new TranslationError(
       "GEMINI_MODEL_NOT_FOUND",
-      "선택한 AI 모델을 사용할 수 없습니다.\n모델명을 gemini-2.0-flash-lite로 변경해 보세요.",
+      "선택한 AI 모델을 사용할 수 없습니다.\n모델명을 gemini-3.1-flash-lite로 변경해 보세요.",
       originalMessage,
     );
   }
@@ -327,7 +328,9 @@ export const getTranslationErrorStatus = (
       return 502;
     case "DOCUMENT_EMPTY":
       return 400;
+    case "TRANSLATION_ALL_FAILED":
+      return 500;
     default:
-      return 502;
+      return 500;
   }
 };

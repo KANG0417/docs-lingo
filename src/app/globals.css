@@ -88,6 +88,16 @@ body {
     100% 100%;
 }
 
+/* 일반 키워드 밑줄 강조 */
+.emphasis-underline {
+  text-decoration-line: underline;
+  text-decoration-color: rgba(79, 70, 229, 0.55);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  color: #312e81;
+}
+
 /* 핵심 키워드 코드블록 강조 */
 .keyword-chip {
   display: inline-block;

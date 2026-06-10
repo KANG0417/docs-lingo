@@ -13,6 +13,7 @@ import {
   TranslationError,
 } from "@/lib/translation-errors";
 import type { UserAiCredentials } from "@/types/ai-settings";
+import { normalizeSummaryTerms } from "@/lib/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
 
 interface GeminiDocumentResponse {
@@ -30,17 +31,11 @@ export interface ProcessedDocument {
   usedFallback: boolean;
 }
 
-const normalizeSummaryTerms = (
-  summaryTerms: GeminiDocumentResponse["summaryTerms"],
-): KeywordTerm[] => {
-  return summaryTerms
-    .map((item) => ({
-      term: item.term.trim(),
-      description: item.description.trim(),
-      isCoreKeyword: Boolean(item.isCoreKeyword),
-    }))
-    .filter((item) => item.term && item.description)
-    .slice(0, 8);
+const normalizeTranslatedContent = (content: string): string => {
+  return content
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 };
 
 const buildInterpretationPrompt = (
@@ -72,12 +67,21 @@ ${refinedAiInput}
   ]
 }
 
-규칙:
-- translatedContent는 문단 흐름을 유지한 한국어 번역
-- API명, 함수명, 라이브러리명은 원문 유지
-- summaryTerms는 최대 8개
-- 핵심 용어 4개는 isCoreKeyword를 true로 설정
-- description은 "용어이름: 용어설명" 형식의 한국어 설명`;
+번역 형식 규칙 (매우 중요):
+- 입력의 [문단 N] 단위를 그대로 유지하세요.
+- translatedContent에서 문단과 문단 사이는 반드시 빈 줄 1개(\\n\\n)로 구분하세요.
+- 한 문단 안에서 원문 줄바꿈이 있으면 \\n 으로 표현하세요.
+- 모든 문장을 한 줄로 이어 붙이지 마세요.
+
+키워드 규칙:
+- summaryTerms는 최대 8개, 같은 용어를 중복 등록하지 마세요.
+- 핵심 용어 4개만 isCoreKeyword: true (본문에서 코드블록 강조)
+- 나머지 용어는 isCoreKeyword: false (본문에서 밑줄 강조)
+- term은 translatedContent에 실제 등장하는 표기와 정확히 일치해야 합니다.
+- API명, 함수명, 라이브러리명, 프로토콜명 같은 기술 개념만 핵심 키워드로 선택하세요.
+- API Reference, Documentation, Guide, Overview, Introduction, Changelog 같은 문서/내비게이션 용어는 핵심 키워드에서 제외하세요.
+- description에는 용어 설명만 작성하세요. 용어명을 description 앞에 반복하지 마세요.
+  (잘못된 예: "React: UI 라이브러리" / 올바른 예: "UI 라이브러리")`;
 };
 
 const processWithGemini = async (
@@ -101,7 +105,7 @@ const processWithGemini = async (
     }
 
     return {
-      translatedContent: response.translatedContent.trim(),
+      translatedContent: normalizeTranslatedContent(response.translatedContent),
       summaryTerms: normalizeSummaryTerms(response.summaryTerms ?? []),
       usedFallback: false,
     };
@@ -124,7 +128,21 @@ const processWithFallback = async (
   const limitedContent = originalContent.slice(0, MAX_AI_INPUT_LENGTH);
 
   try {
-    const translatedContent = await translateWithFallbackApi(limitedContent);
+    const paragraphs = limitedContent
+      .split(/\n{2,}/)
+      .map((paragraph) => paragraph.trim())
+      .filter((paragraph) => paragraph.length > 0);
+
+    const translatedParagraphs =
+      paragraphs.length > 0
+        ? await Promise.all(
+            paragraphs.map((paragraph) => translateWithFallbackApi(paragraph)),
+          )
+        : [await translateWithFallbackApi(limitedContent)];
+
+    const translatedContent = normalizeTranslatedContent(
+      translatedParagraphs.join("\n\n"),
+    );
 
     return {
       translatedContent,
