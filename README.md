@@ -463,7 +463,3 @@ normalizeDocumentUrl("https://nextjs.org/docs#how-to-use-the-docs")
 지금은 북마크에 남긴 메모를 나중에 수정하거나 지울 수 없습니다. `bookmarks` 테이블에 `memo` 컬럼을 추가하고, RLS로 본인만 수정·삭제할 수 있게 할 예정입니다. 북마크가 단순 저장이 아니라 "나만의 학습 노트"가 되는 것이 목표입니다.
 
 ---
-
-## 라이선스
-
-Private project.
