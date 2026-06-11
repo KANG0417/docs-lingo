@@ -6,7 +6,7 @@ import Kakao from "next-auth/providers/kakao";
 import Naver from "next-auth/providers/naver";
 import type { KakaoProfile } from "next-auth/providers/kakao";
 import type { NaverProfile } from "next-auth/providers/naver";
-import { authConfig } from "@/lib/auth-config";
+import { authConfig } from "@/lib/auth/auth-config";
 import { syncUserProfile } from "@/services/profile-service";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

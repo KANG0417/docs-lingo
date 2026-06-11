@@ -1,4 +1,4 @@
-import { normalizeTermKey } from "@/lib/summary-terms-normalizer";
+import { normalizeTermKey } from "@/lib/translation/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
 
 export type TextSegmentType =

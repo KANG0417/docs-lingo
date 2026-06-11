@@ -1,5 +1,6 @@
 import { DOCUMENT_FETCH_TIMEOUT_MS } from "@/constants/document-pipeline";
-import { TranslationError } from "@/lib/translation-errors";
+import { normalizeDocumentUrl } from "@/lib/document/normalize-document-url";
+import { TranslationError } from "@/lib/translation/translation-errors";
 
 interface FetchedHtmlDocument {
   url: string;
@@ -28,7 +29,7 @@ export const fetchHtmlDocument = async (url: string): Promise<FetchedHtmlDocumen
     const html = await response.text();
 
     return {
-      url: targetUrl.toString(),
+      url: normalizeDocumentUrl(targetUrl.href),
       html,
     };
   } catch (error) {

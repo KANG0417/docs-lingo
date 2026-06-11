@@ -46,7 +46,7 @@ export const ProfileAvatarUpload = ({
           onClick={handleCameraClick}
           disabled={disabled || isUploading}
           aria-label="프로필 이미지 변경"
-          className="absolute -bottom-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full border-2 border-amber-50 bg-[#0a1030] text-indigo-100 shadow-md transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50"
+          className="absolute -bottom-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full border-2 border-amber-50 bg-[#0a1030] text-indigo-100 shadow-md transition-transform hover:scale-105 disabled:opacity-50"
         >
           <CameraIcon size={18} />
         </button>

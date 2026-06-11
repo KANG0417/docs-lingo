@@ -16,6 +16,14 @@ const NOISE_PATTERNS: RegExp[] = [
   /terms of service/i,
   /skip to content/i,
   /table of contents/i,
+  /join our community/i,
+  /github discussions/i,
+  /\bdiscord\b/i,
+  /\breddit\b/i,
+  /follow us on/i,
+  /supported browsers/i,
+  /screen reader/i,
+  /voiceover/i,
 ];
 
 const scoreParagraph = (paragraph: string): number => {

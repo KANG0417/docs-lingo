@@ -20,3 +20,12 @@ export const buildTextDocumentUrl = (text: string): string => {
 export const isTextDocumentUrl = (url: string): boolean => {
   return url.startsWith(TEXT_DOCUMENT_PREFIX);
 };
+
+/** 클라이언트에 노출할 URL. 직접 입력 텍스트는 null */
+export const toPublicDocumentUrl = (url: string | null): string | null => {
+  if (!url || isTextDocumentUrl(url)) {
+    return null;
+  }
+
+  return url;
+};

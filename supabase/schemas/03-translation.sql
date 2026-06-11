@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS public.translations
     content text NOT NULL,
     original_content text,
     summary_terms jsonb NOT NULL DEFAULT '[]'::jsonb,
+    document_images jsonb NOT NULL DEFAULT '[]'::jsonb,
     source_lang text,
     target_lang text NOT NULL DEFAULT 'ko',
     created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -56,3 +57,29 @@ ALTER TABLE public.translations
 
 ALTER TABLE public.translations
     ALTER COLUMN summary_terms SET NOT NULL;
+
+ALTER TABLE public.translations
+    ADD COLUMN IF NOT EXISTS document_images jsonb;
+
+UPDATE public.translations
+SET document_images = '[]'::jsonb
+WHERE document_images IS NULL;
+
+ALTER TABLE public.translations
+    ALTER COLUMN document_images SET DEFAULT '[]'::jsonb;
+
+ALTER TABLE public.translations
+    ALTER COLUMN document_images SET NOT NULL;
+
+ALTER TABLE public.translations
+    ADD COLUMN IF NOT EXISTS document_code_blocks jsonb;
+
+UPDATE public.translations
+SET document_code_blocks = '[]'::jsonb
+WHERE document_code_blocks IS NULL;
+
+ALTER TABLE public.translations
+    ALTER COLUMN document_code_blocks SET DEFAULT '[]'::jsonb;
+
+ALTER TABLE public.translations
+    ALTER COLUMN document_code_blocks SET NOT NULL;

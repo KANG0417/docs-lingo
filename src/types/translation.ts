@@ -1,3 +1,6 @@
+import type { DocumentCodeBlock } from "@/types/document-code-block";
+import type { DocumentImage } from "@/types/document-image";
+
 export interface KeywordTerm {
   term: string;
   description: string;
@@ -12,6 +15,8 @@ export interface TranslationHistoryItem {
   originalContent: string | null;
   translatedContent: string;
   summaryTerms: KeywordTerm[];
+  documentImages: DocumentImage[];
+  documentCodeBlocks: DocumentCodeBlock[];
   createdAt: string;
 }
 
@@ -23,6 +28,8 @@ export interface DocumentTranslationResult {
   originalContent: string;
   translatedContent: string;
   summaryTerms: KeywordTerm[];
+  documentImages: DocumentImage[];
+  documentCodeBlocks: DocumentCodeBlock[];
   createdAt: string;
 }
 

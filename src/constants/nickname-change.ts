@@ -1,0 +1,1 @@
+export const NICKNAME_CHANGE_COOLDOWN_DAYS = 3;

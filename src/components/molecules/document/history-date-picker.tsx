@@ -6,12 +6,12 @@ import { DayPicker } from "react-day-picker";
 import { ko } from "react-day-picker/locale";
 import "react-day-picker/style.css";
 import { HistoryCalendarMonth } from "@/components/molecules/document/history-calendar-month";
-import { isKoreanPublicHoliday } from "@/lib/korean-public-holidays";
+import { isKoreanPublicHoliday } from "@/lib/date/korean-public-holidays";
 import {
   dateKeyToDate,
   dateToDateKey,
   getHistoryDateBounds,
-} from "@/lib/translation-history-date";
+} from "@/lib/translation/translation-history-date";
 
 interface HistoryDatePickerProps {
   selectedDateKey: string;

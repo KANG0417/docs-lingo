@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { MouseEvent, ReactElement } from "react";
 import { WITHDRAWAL_CONFIRMATION_PHRASE } from "@/constants/withdrawal";
-import { formatWithdrawalScheduledAt } from "@/lib/format-withdrawal-scheduled-at";
+import { formatWithdrawalScheduledAt } from "@/lib/profile/format-withdrawal-scheduled-at";
 
 interface WithdrawConfirmModalProps {
   isOpen: boolean;
@@ -81,21 +81,22 @@ export const WithdrawConfirmModal = ({
           aria-modal="true"
           aria-labelledby="withdraw-modal-title"
           aria-describedby="withdraw-modal-description"
-          className="font-doc-popup memo-lines rounded-sm bg-amber-50 p-8 shadow-[4px_8px_24px_rgba(0,0,0,0.4)]"
+          className="font-doc-withdrawal memo-lines rounded-sm bg-amber-50 p-8 shadow-[4px_8px_24px_rgba(0,0,0,0.4)]"
           onClick={handleDialogClick}
         >
           <h2
             id="withdraw-modal-title"
-            className="whitespace-nowrap text-center text-xl font-extrabold text-red-700"
+            className="whitespace-nowrap text-center text-lg font-extrabold text-red-700"
           >
             회원 탈퇴 확인
           </h2>
 
           <p
             id="withdraw-modal-description"
-            className="mt-4 whitespace-nowrap text-center text-sm font-bold text-red-700"
+            className="mt-4 text-center text-sm font-bold leading-relaxed text-red-700"
           >
-            탈퇴 시 프로필, 북마크, 번역 히스토리가 모두 삭제되며 복구할 수 없습니다.
+            탈퇴 시 프로필, 북마크, 번역 히스토리가 모두 삭제되며 복구할 수
+            없습니다.
           </p>
 
           <p className="mt-3 whitespace-nowrap text-center text-sm font-semibold text-amber-900">
@@ -138,7 +139,7 @@ export const WithdrawConfirmModal = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="inline-flex h-11 w-32 items-center justify-center rounded-md bg-white text-sm font-semibold text-zinc-600 shadow-sm transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 w-32 items-center justify-center rounded-md bg-white text-sm font-semibold text-zinc-600 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-60"
             >
               취소
             </button>
@@ -146,7 +147,7 @@ export const WithdrawConfirmModal = ({
               type="button"
               onClick={onConfirm}
               disabled={!isPhraseMatched || isSubmitting}
-              className="inline-flex h-11 w-32 items-center justify-center rounded-md bg-red-600 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-400"
+              className="inline-flex h-11 w-32 items-center justify-center rounded-md bg-red-600 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:bg-red-400"
             >
               {isSubmitting ? "예약 중..." : "탈퇴 예약"}
             </button>

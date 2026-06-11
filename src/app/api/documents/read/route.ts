@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 import { refineDocumentFromUrl } from "@/lib/document-pipeline/refine-document";
-import { toTranslationError } from "@/lib/translation-errors";
+import { toTranslationError } from "@/lib/translation/translation-errors";
 import type { DocumentContent } from "@/types/document";
 
 export const runtime = "nodejs";

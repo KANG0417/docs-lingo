@@ -4,7 +4,7 @@ import {
   PROFILE_IMAGE_MAX_SIZE_BYTES,
   type ProfileImageMimeType,
 } from "@/constants/profile-storage";
-import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import { getSupabaseAdminClient } from "@/lib/supabase/supabase-admin";
 
 const MIME_TO_EXTENSION: Record<ProfileImageMimeType, string> = {
   "image/jpeg": "jpg",

@@ -1,9 +1,13 @@
 import { WITHDRAWAL_GRACE_PERIOD_MS } from "@/constants/withdrawal";
-import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import { getSupabaseAdminClient } from "@/lib/supabase/supabase-admin";
+import {
+  buildNicknameChangeCooldownMessage,
+  resolveNicknameChangePolicy,
+} from "@/lib/profile/nickname-change-policy";
 import {
   resolveNicknameForProfile,
   validateNickname,
-} from "@/lib/validate-nickname";
+} from "@/lib/profile/validate-nickname";
 import { deleteUserProfileImages } from "@/services/profile-image-service";
 import type { UpdateUserProfilePayload, UserProfile } from "@/types/user";
 
@@ -12,6 +16,10 @@ interface ProfileRow {
   nickname: string;
   image: string | null;
   withdrawal_scheduled_at: string | null;
+}
+
+interface ProfileHistoryRow {
+  created_at: string;
 }
 
 interface SyncUserProfileParams {
@@ -53,11 +61,15 @@ export const ensureUserProfileExists = async (
   }
 };
 
-const mapProfileRow = (data: ProfileRow): UserProfile => ({
+const mapProfileRow = (
+  data: ProfileRow,
+  nicknameNextChangeAt: string | null = null,
+): UserProfile => ({
   id: data.id,
   nickname: data.nickname,
   image: data.image,
   withdrawalScheduledAt: data.withdrawal_scheduled_at,
+  nicknameNextChangeAt,
 });
 
 const isWithdrawalDue = (scheduledAt: string): boolean =>
@@ -113,6 +125,38 @@ const fetchProfileRow = async (
   return null;
 };
 
+const getLastNicknameChangeAt = async (
+  userId: string,
+): Promise<string | null> => {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profile_histories")
+    .select("created_at")
+    .eq("user_id", userId)
+    .eq("field", "nickname")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getLastNicknameChangeAt]", error.message);
+    return null;
+  }
+
+  return (data as ProfileHistoryRow | null)?.created_at ?? null;
+};
+
+export const getNicknameChangePolicy = async (
+  userId: string,
+): Promise<{ nextChangeAt: string | null }> => {
+  const lastChangedAt = await getLastNicknameChangeAt(userId);
+  return resolveNicknameChangePolicy(lastChangedAt);
+};
+
 export const getUserProfile = async (
   userId: string,
 ): Promise<UserProfile | null> => {
@@ -126,7 +170,9 @@ export const getUserProfile = async (
     return null;
   }
 
-  return mapProfileRow(data);
+  const nicknameChangePolicy = await getNicknameChangePolicy(userId);
+
+  return mapProfileRow(data, nicknameChangePolicy.nextChangeAt);
 };
 
 export const authUserExists = async (userId: string): Promise<boolean> => {
@@ -176,6 +222,7 @@ export const getUserProfileOrEnsure = async (
     nickname: fallbackNickname,
     image: null,
     withdrawalScheduledAt: null,
+    nicknameNextChangeAt: null,
   };
 };
 
@@ -236,6 +283,24 @@ export const updateUserProfile = async (
     throw new Error(nicknameError);
   }
 
+  const currentProfile = await fetchProfileRow(userId);
+
+  if (!currentProfile) {
+    throw new Error("프로필을 찾을 수 없습니다.");
+  }
+
+  const isNicknameChanging = trimmedNickname !== currentProfile.nickname;
+
+  if (isNicknameChanging) {
+    const nicknameChangePolicy = await getNicknameChangePolicy(userId);
+
+    if (nicknameChangePolicy.nextChangeAt) {
+      throw new Error(
+        buildNicknameChangeCooldownMessage(nicknameChangePolicy.nextChangeAt),
+      );
+    }
+  }
+
   const { data, error } = await supabase
     .from("profiles")
     .update({
@@ -259,7 +324,9 @@ export const updateUserProfile = async (
     })
     .eq("id", userId);
 
-  return mapProfileRow(data);
+  const nicknameChangePolicy = await getNicknameChangePolicy(userId);
+
+  return mapProfileRow(data, nicknameChangePolicy.nextChangeAt);
 };
 
 export const scheduleAccountWithdrawal = async (

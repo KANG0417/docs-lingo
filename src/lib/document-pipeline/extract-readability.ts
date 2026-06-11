@@ -1,6 +1,6 @@
 import { Readability } from "@mozilla/readability";
-import { parseHTML } from "linkedom";
-import { extractTitle } from "@/lib/extract-html-document";
+import { createDocumentFromHtml } from "@/lib/document/html-document";
+import { extractTitle } from "@/lib/document/extract-html-document";
 
 interface ReadabilityExtractionResult {
   title: string;
@@ -16,20 +16,15 @@ const normalizeWhitespace = (text: string): string => {
     .trim();
 };
 
-const createDocumentFromHtml = (html: string, url: string): Document => {
-  const htmlWithBase = html.includes("<head")
-    ? html.replace("<head>", `<head><base href="${url}">`)
-    : `<html><head><base href="${url}"></head><body>${html}</body></html>`;
-
-  const { document } = parseHTML(htmlWithBase);
-  return document as unknown as Document;
+const createReadableDocument = (html: string, url: string): Document => {
+  return createDocumentFromHtml(html, url);
 };
 
 export const extractWithReadability = (
   html: string,
   url: string,
 ): ReadabilityExtractionResult => {
-  const document = createDocumentFromHtml(html, url);
+  const document = createReadableDocument(html, url);
   const reader = new Readability(document);
   const article = reader.parse();
 

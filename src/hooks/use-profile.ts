@@ -17,6 +17,7 @@ interface UseProfileReturn {
   profileSuccessMessage: string | null;
   withdrawalErrorMessage: string | null;
   withdrawalSuccessMessage: string | null;
+  clearProfileFeedback: () => void;
   updateProfile: (payload: UpdateUserProfilePayload) => Promise<boolean>;
   uploadProfileImage: (file: File) => Promise<string | null>;
   scheduleWithdrawal: () => Promise<ScheduleWithdrawalResult | null>;
@@ -43,6 +44,11 @@ export const useProfile = (): UseProfileReturn => {
   const [withdrawalSuccessMessage, setWithdrawalSuccessMessage] = useState<
     string | null
   >(null);
+
+  const clearProfileFeedback = (): void => {
+    setProfileErrorMessage(null);
+    setProfileSuccessMessage(null);
+  };
 
   const updateProfile = async (
     payload: UpdateUserProfilePayload,
@@ -173,6 +179,7 @@ export const useProfile = (): UseProfileReturn => {
     profileSuccessMessage,
     withdrawalErrorMessage,
     withdrawalSuccessMessage,
+    clearProfileFeedback,
     updateProfile,
     uploadProfileImage,
     scheduleWithdrawal,

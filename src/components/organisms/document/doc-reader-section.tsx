@@ -6,6 +6,10 @@ import type { FormEvent, ReactElement } from "react";
 import { LoadingBar } from "@/components/atoms/feedback/loading-bar";
 import { TranslationHistoryPanel } from "@/components/organisms/document/translation-history-panel";
 import { TranslationResultSection } from "@/components/organisms/document/translation-result-section";
+import {
+  TEXT_READING_LOADING_MESSAGES,
+  URL_TRANSLATION_LOADING_MESSAGES,
+} from "@/constants/translation-loading-messages";
 import { useDocumentReader } from "@/hooks/use-document-reader";
 import type { DocInputMode } from "@/types/document";
 import type { DocumentTranslationResult } from "@/types/translation";
@@ -29,6 +33,7 @@ export const DocReaderSection = (): ReactElement => {
     readFromUrl,
     readFromText,
     selectHistoryItem,
+    clearTranslationResult,
   } = useDocumentReader();
 
   const [urlInput, setUrlInput] = useState<string>("");
@@ -55,6 +60,12 @@ export const DocReaderSection = (): ReactElement => {
 
   const handleSelectHistory = (item: DocumentTranslationResult): void => {
     selectHistoryItem(item);
+  };
+
+  const handleDeletedTranslation = (translationId: string): void => {
+    if (translationResult?.id === translationId) {
+      clearTranslationResult();
+    }
   };
 
   return (
@@ -130,7 +141,7 @@ export const DocReaderSection = (): ReactElement => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex h-11 w-full items-center justify-center rounded-md bg-[#0a1030] text-sm font-semibold text-indigo-100 transition-all duration-150 hover:-translate-y-0.5 hover:bg-[#141c4a] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#0a1030]/40 sm:w-36 sm:self-end"
+                  className="flex h-11 w-full items-center justify-center rounded-md bg-[#0a1030] text-sm font-semibold text-indigo-100 transition-all duration-150 hover:-translate-y-0.5 hover:bg-[#141c4a] hover:shadow-lg active:translate-y-0 disabled:bg-[#0a1030]/40 sm:w-36 sm:self-end"
                 >
                   {isLoading
                     ? mode === "url"
@@ -145,8 +156,10 @@ export const DocReaderSection = (): ReactElement => {
               {isLoading && (
                 <div className="mt-5">
                   <LoadingBar
-                    message={
-                      mode === "url" ? "번역중입니다..." : "읽는중입니다..."
+                    messages={
+                      mode === "url"
+                        ? URL_TRANSLATION_LOADING_MESSAGES
+                        : TEXT_READING_LOADING_MESSAGES
                     }
                   />
                 </div>
@@ -171,6 +184,7 @@ export const DocReaderSection = (): ReactElement => {
         <TranslationHistoryPanel
           selectedTranslationId={translationResult?.id ?? null}
           onSelectHistory={handleSelectHistory}
+          onDeletedTranslation={handleDeletedTranslation}
           refreshKey={historyRefreshKey}
         />
       </div>

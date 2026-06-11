@@ -5,7 +5,7 @@ import {
   fontDocTitle,
   fontDocTranslation,
   fontDocTranslationBold,
-} from "@/lib/fonts";
+} from "@/lib/fonts/fonts";
 import "./globals.css";
 
 const geistSans = Geist({

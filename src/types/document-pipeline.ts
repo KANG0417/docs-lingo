@@ -1,3 +1,6 @@
+import type { DocumentCodeBlock } from "@/types/document-code-block";
+import type { DocumentImage } from "@/types/document-image";
+
 export interface RefinedParagraph {
   index: number;
   text: string;
@@ -10,6 +13,8 @@ export interface RefinedDocument {
   rawParagraphCount: number;
   filteredParagraphCount: number;
   paragraphs: RefinedParagraph[];
+  documentImages: DocumentImage[];
+  documentCodeBlocks: DocumentCodeBlock[];
   originalContent: string;
   aiInput: string;
 }

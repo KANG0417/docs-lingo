@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 
 export const runtime = "nodejs";
 import {
   getTranslationErrorStatus,
   toTranslationError,
-} from "@/lib/translation-errors";
+} from "@/lib/translation/translation-errors";
+import { normalizeDocumentUrl } from "@/lib/document/normalize-document-url";
 import {
   translateDocumentFromText,
   translateDocumentFromUrl,
@@ -69,7 +70,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
         )
       : await translateDocumentFromUrl(
           session.user.id,
-          trimmedUrl,
+          normalizeDocumentUrl(trimmedUrl),
           session.user.name,
         );
 

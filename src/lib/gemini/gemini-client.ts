@@ -2,12 +2,12 @@ import { GEMINI_MAX_RETRY_COUNT } from "@/constants/gemini";
 import {
   createInvalidGeminiApiKeyMessage,
   isValidGeminiApiKeyFormat,
-} from "@/lib/gemini-api-key";
-import { resolveAutoGeminiModels } from "@/lib/gemini-model-resolver";
+} from "@/lib/gemini/gemini-api-key";
+import { resolveAutoGeminiModels } from "@/lib/gemini/gemini-model-resolver";
 import {
   normalizeGeminiError,
   TranslationError,
-} from "@/lib/translation-errors";
+} from "@/lib/translation/translation-errors";
 import type { UserAiCredentials } from "@/types/ai-settings";
 
 interface GeminiGenerateContentResponse {

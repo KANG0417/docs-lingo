@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { normalizeSummaryTerms } from "@/lib/summary-terms-normalizer";
+import { normalizeSummaryTerms } from "@/lib/translation/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
 
 interface KeywordSummaryProps {

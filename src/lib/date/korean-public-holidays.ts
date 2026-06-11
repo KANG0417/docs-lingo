@@ -1,4 +1,4 @@
-import { getTranslationDayRange } from "@/lib/translation-day-range";
+import { getTranslationDayRange } from "@/lib/translation/translation-day-range";
 
 /** 매년 같은 날짜의 법정 공휴일 (MM-DD, KST) */
 const FIXED_HOLIDAY_MONTH_DAYS = new Set([

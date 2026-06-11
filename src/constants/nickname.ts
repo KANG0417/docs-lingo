@@ -53,10 +53,46 @@ export const PROFANITY_NICKNAME_PATTERNS: readonly RegExp[] = [
   /씨\s*발/,
 ];
 
-export const NICKNAME_RULE_LINES: readonly string[] = [
-  "앞뒤 공백은 제거되며, 닉네임 안에는 공백을 넣을 수 없습니다.",
-  "한글, 영문, 숫자와 특수문자(_, -, .)만 사용할 수 있습니다.",
-  "2~12자까지 입력할 수 있습니다.",
-  "admin, 관리자, 독스링고 등 예약어는 사용할 수 없습니다.",
-  "욕설·비속어가 포함된 닉네임은 사용할 수 없습니다.",
+export interface NicknameRuleSegment {
+  text: string;
+  emphasize?: boolean;
+}
+
+export const NICKNAME_RULE_LINES: readonly NicknameRuleSegment[][] = [
+  [
+    { text: "앞뒤 " },
+    { text: "공백", emphasize: true },
+    { text: "은 제거되며, 닉네임 안에는 " },
+    { text: "공백", emphasize: true },
+    { text: "을 넣을 수 없습니다." },
+  ],
+  [
+    { text: "" },
+    { text: "한글, 영문, 숫자", emphasize: true },
+    { text: "와 특수문자(" },
+    { text: "_, -, .", emphasize: true },
+    { text: ")만 사용할 수 있습니다." },
+  ],
+  [
+    { text: "" },
+    { text: "2~12자", emphasize: true },
+    { text: "까지 입력할 수 있습니다." },
+  ],
+  [
+    { text: "" },
+    { text: "admin, 관리자, 독스링고", emphasize: true },
+    { text: " 등 " },
+    { text: "예약어", emphasize: true },
+    { text: "는 사용할 수 없습니다." },
+  ],
+  [
+    { text: "" },
+    { text: "3일에 한 번", emphasize: true },
+    { text: "만 변경할 수 있습니다." },
+  ],
+  [
+    { text: "" },
+    { text: "욕설·비속어", emphasize: true },
+    { text: "가 포함된 닉네임은 사용할 수 없습니다." },
+  ],
 ];

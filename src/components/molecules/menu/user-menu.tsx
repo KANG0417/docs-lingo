@@ -48,7 +48,7 @@ export const UserMenu = ({ nickname, image }: UserMenuProps): ReactElement => {
         className="flex items-center gap-3.5 rounded-full py-2 pl-2 pr-6 transition-colors hover:bg-white/10"
       >
         <UserAvatar nickname={nickname} image={image} size="sm" />
-        <span className="font-doc-body text-xl font-semibold text-indigo-100">
+        <span className="font-doc-nickname text-lg font-semibold text-indigo-100">
           {nickname}
         </span>
       </button>
@@ -56,7 +56,7 @@ export const UserMenu = ({ nickname, image }: UserMenuProps): ReactElement => {
       {isOpen && (
         <nav
           role="menu"
-          className="font-doc-popup absolute right-0 top-full z-20 mt-2 w-52 -rotate-1 rounded-sm border border-amber-200 bg-amber-50 shadow-[2px_4px_12px_rgba(120,90,20,0.18)]"
+          className="font-doc-popup absolute right-0 top-full z-20 mt-2 w-56 -rotate-1 rounded-sm border border-amber-200 bg-amber-50 shadow-[2px_4px_12px_rgba(120,90,20,0.18)]"
         >
           {/* 메모지 상단 테이프 */}
           <span
@@ -64,19 +64,22 @@ export const UserMenu = ({ nickname, image }: UserMenuProps): ReactElement => {
             className="absolute -top-2.5 left-1/2 h-5 w-16 -translate-x-1/2 rotate-2 rounded-[2px] bg-amber-200/70 shadow-sm"
           />
 
-          <p className="border-b border-dashed border-amber-300 px-4 pb-2.5 pt-4 text-xs font-bold tracking-wide text-amber-700">
-            {nickname}님 안녕하세요
+          <p className="font-doc-translation flex flex-wrap items-center gap-1 border-b border-dashed border-amber-300 px-4 pb-3 pt-4 text-sm font-bold leading-snug text-amber-800">
+            <span className="rounded-md bg-[#0a1030] px-2 py-0.5 text-sm font-semibold text-white">
+              {nickname}
+            </span>
+            <span>님 안녕하세요</span>
           </p>
 
           <Link
             href="/profile"
             role="menuitem"
             onClick={handleClose}
-            className="flex w-full items-center gap-2.5 border-b border-dashed border-amber-300 px-4 py-3 text-sm text-zinc-700 transition-colors hover:bg-amber-100/70"
+            className="flex w-full items-center gap-3 border-b border-dashed border-amber-300 px-4 py-3 text-sm text-zinc-700 transition-colors hover:bg-amber-100/70"
           >
             <svg
-              width={16}
-              height={16}
+              width={18}
+              height={18}
               viewBox="0 0 24 24"
               fill="none"
               aria-hidden="true"
@@ -96,11 +99,11 @@ export const UserMenu = ({ nickname, image }: UserMenuProps): ReactElement => {
             href="/bookmarks"
             role="menuitem"
             onClick={handleClose}
-            className="flex w-full items-center gap-2.5 border-b border-dashed border-amber-300 px-4 py-3 text-sm text-zinc-700 transition-colors hover:bg-amber-100/70"
+            className="flex w-full items-center gap-3 border-b border-dashed border-amber-300 px-4 py-3 text-sm text-zinc-700 transition-colors hover:bg-amber-100/70"
           >
             <svg
-              width={16}
-              height={16}
+              width={18}
+              height={18}
               viewBox="0 0 24 24"
               fill="none"
               aria-hidden="true"
@@ -119,11 +122,11 @@ export const UserMenu = ({ nickname, image }: UserMenuProps): ReactElement => {
             type="button"
             role="menuitem"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-2.5 rounded-b-sm px-4 py-3 text-sm text-red-600 transition-colors hover:bg-red-100/60"
+            className="flex w-full items-center gap-3 rounded-b-sm px-4 py-3 text-sm text-red-600 transition-colors hover:bg-red-100/60"
           >
             <svg
-              width={16}
-              height={16}
+              width={18}
+              height={18}
               viewBox="0 0 24 24"
               fill="none"
               aria-hidden="true"

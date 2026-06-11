@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 import type { ReactElement } from "react";
 import { Navbar } from "@/components/organisms/header/navbar";
 import { DashboardTemplate } from "@/components/templates/dashboard/dashboard-template";
-import { auth } from "@/lib/auth";
-import { getDisplayProfile } from "@/lib/get-display-profile";
+import { auth } from "@/lib/auth/auth";
+import { getDisplayProfile } from "@/lib/profile/get-display-profile";
 
 export const metadata: Metadata = {
   title: "독스링고 - 북마크",
@@ -34,7 +34,7 @@ const BookmarksPage = async (): Promise<ReactElement> => {
         className="flex w-full flex-col items-center gap-8"
       >
         <header className="flex flex-col gap-0.5 text-center">
-          <h1 className="text-[2.375rem] font-extrabold tracking-tight text-white">
+          <h1 className="font-doc-title text-[2.375rem] font-extrabold tracking-tight text-white">
             북마크
           </h1>
           <p className="font-doc-aux text-[1.375rem] text-indigo-200/70">

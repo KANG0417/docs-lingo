@@ -23,11 +23,24 @@
   font-family: var(--font-doc-body), var(--font-sans), sans-serif;
 }
 
-/* 닉네임 입력 영역 — 116watermelon */
+/* 닉네임 입력 — 116watermelon / 규칙·보조 — Binggrae2 */
 .font-doc-nickname,
 .font-doc-nickname input,
 .font-doc-nickname input::placeholder {
   font-family: var(--font-doc-body), var(--font-sans), sans-serif;
+}
+
+.font-doc-nickname-rules,
+.font-doc-nickname-meta {
+  font-family: var(--font-doc-translation), var(--font-sans), sans-serif;
+}
+
+/* 회원 탈퇴 — Binggrae2 Bold */
+.font-doc-withdrawal,
+.font-doc-withdrawal button,
+.font-doc-withdrawal input,
+.font-doc-withdrawal input::placeholder {
+  font-family: var(--font-doc-translation-bold), var(--font-sans), sans-serif;
 }
 
 /* 팝업 · 모달 — 116watermelon */
@@ -38,6 +51,15 @@
 .font-doc-popup a,
 .font-doc-popup time {
   font-family: var(--font-doc-body), var(--font-sans), sans-serif;
+}
+
+/* disabled 상태 — 금지 커서 대신 기본 커서 */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"] {
+  cursor: default;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -77,6 +99,20 @@ body {
 
 .loading-bar-indicator {
   animation: loading-slide 1.2s ease-in-out infinite;
+}
+
+@keyframes letter-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.35em);
+  }
+}
+
+.letter-bounce {
+  animation: letter-bounce 0.85s ease-in-out infinite;
 }
 
 @keyframes cursor-blink {
@@ -156,7 +192,7 @@ body {
 .translation-result .emphasis-underline,
 .translation-content .section-label,
 .translation-content .emphasis-underline,
-.translation-content .paragraph-highlighter {
+.translation-content .translation-section-heading {
   font-family: var(--font-doc-translation-bold), var(--font-sans), sans-serif;
 }
 
@@ -164,7 +200,7 @@ body {
   line-height: 1.9375rem;
 }
 
-.paragraph-highlighter {
+.translation-section-heading {
   display: inline-block;
   border-radius: 0.125rem;
   background: linear-gradient(
@@ -175,16 +211,8 @@ body {
     rgba(255, 245, 130, 0) 100%
   );
   padding: 0 0.25rem;
-  font-size: 1.0625rem;
-  font-weight: 700;
-  color: #3f3f46;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
-}
-
-.paragraph-highlighter-break {
-  display: block;
-  height: 0.375rem;
 }
 
 /* 핵심 키워드 코드블록 강조 */
@@ -768,15 +796,62 @@ select:disabled {
   min-height: 12rem;
 }
 
+.history-memo-item-row {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+}
+
+.history-memo-item-row-selected .history-memo-delete-btn {
+  opacity: 1;
+}
+
 .history-memo-item {
   display: flex;
   width: 100%;
+  flex: 1;
+  min-width: 0;
   align-items: center;
   gap: 0.5rem;
   min-height: 1.9375rem;
   padding: 0 0.75rem 0 0;
   text-align: left;
   transition: background-color 0.15s ease;
+}
+
+.history-memo-delete-btn {
+  display: flex;
+  width: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.375rem;
+  border: none;
+  background: transparent;
+  font-size: 1.125rem;
+  line-height: 1;
+  color: rgba(180, 83, 9, 0.45);
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.history-memo-item-row:hover .history-memo-delete-btn,
+.history-memo-delete-btn:focus-visible {
+  opacity: 1;
+}
+
+.history-memo-delete-btn:hover:not(:disabled) {
+  border-radius: 0.25rem;
+  background-color: rgba(254, 226, 226, 0.85);
+  color: rgb(220, 38, 38);
+}
+
+.history-memo-delete-btn:disabled {
+  opacity: 1;
+  color: rgba(180, 83, 9, 0.35);
 }
 
 .history-memo-item:hover {

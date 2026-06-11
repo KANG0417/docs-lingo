@@ -55,7 +55,7 @@ export const getTranslationHistory = async (
     ? `/api/translations/history?${queryString}`
     : "/api/translations/history";
 
-  const response = await fetch(endpoint);
+  const response = await fetch(endpoint, { cache: "no-store" });
 
   if (!response.ok) {
     const { message } = (await response.json()) as { message: string };
@@ -63,4 +63,18 @@ export const getTranslationHistory = async (
   }
 
   return (await response.json()) as TranslationHistoryResponse;
+};
+
+export const deleteTranslationHistoryItem = async (
+  translationId: string,
+): Promise<void> => {
+  const response = await fetch(`/api/translations/history/${translationId}`, {
+    method: "DELETE",
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const { message } = (await response.json()) as { message: string };
+    throw new Error(message);
+  }
 };

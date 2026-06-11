@@ -17,6 +17,7 @@ interface UseDocumentReaderReturn {
   readFromUrl: (url: string) => Promise<void>;
   readFromText: (text: string) => Promise<void>;
   selectHistoryItem: (item: DocumentTranslationResult) => void;
+  clearTranslationResult: () => void;
 }
 
 export const useDocumentReader = (): UseDocumentReaderReturn => {
@@ -74,6 +75,10 @@ export const useDocumentReader = (): UseDocumentReaderReturn => {
     setTranslationResult(item);
   };
 
+  const clearTranslationResult = (): void => {
+    setTranslationResult(null);
+  };
+
   return {
     mode,
     isLoading,
@@ -83,5 +88,6 @@ export const useDocumentReader = (): UseDocumentReaderReturn => {
     readFromUrl,
     readFromText,
     selectHistoryItem,
+    clearTranslationResult,
   };
 };

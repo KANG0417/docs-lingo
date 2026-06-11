@@ -1,4 +1,4 @@
-import { normalizeFallbackError } from "@/lib/translation-errors";
+import { normalizeFallbackError } from "@/lib/translation/translation-errors";
 
 const MYMEMORY_CHUNK_SIZE = 450;
 const MYMEMORY_API_URL = "https://api.mymemory.translated.net/get";

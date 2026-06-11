@@ -54,6 +54,8 @@ export const TranslationResultSection = ({
           <HighlightedTranslationContent
             content={result.translatedContent}
             summaryTerms={result.summaryTerms}
+            documentImages={result.documentImages}
+            documentCodeBlocks={result.documentCodeBlocks}
           />
         </section>
       </div>

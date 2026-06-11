@@ -1,5 +1,5 @@
 import { HISTORY_DATE_RANGE_MONTHS } from "@/constants/translation-history";
-import { getTranslationDayRange } from "@/lib/translation-day-range";
+import { getTranslationDayRange } from "@/lib/translation/translation-day-range";
 
 const KST_TIMEZONE = "Asia/Seoul";
 

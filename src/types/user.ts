@@ -3,6 +3,7 @@ export interface UserProfile {
   nickname: string;
   image: string | null;
   withdrawalScheduledAt: string | null;
+  nicknameNextChangeAt: string | null;
 }
 
 export interface WithdrawalStatus {

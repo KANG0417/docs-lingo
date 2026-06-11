@@ -4,7 +4,7 @@ import type { ReactElement } from "react";
 import { BrandSection } from "@/components/organisms/brand/brand-section";
 import { LoginSection } from "@/components/organisms/auth/login-section";
 import { MainTemplate } from "@/components/templates/landing/main-template";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 
 export const metadata: Metadata = {
   title: "독스링고 - 문서와 언어를 잇다",

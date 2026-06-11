@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { HISTORY_PAGE_SIZE } from "@/constants/translation-history";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/auth";
 import { getTranslationHistory } from "@/services/translation-service";
 
 export const GET = async (request: Request): Promise<NextResponse> => {

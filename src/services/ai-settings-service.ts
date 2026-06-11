@@ -1,4 +1,4 @@
-import { getSupabaseAdminClient } from "@/lib/supabase-admin";
+import { getSupabaseAdminClient } from "@/lib/supabase/supabase-admin";
 import type { UserAiCredentials } from "@/types/ai-settings";
 
 export const getUserAiCredentials = async (

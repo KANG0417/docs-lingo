@@ -1,27 +1,161 @@
+import type { DocumentCodeBlock } from "@/types/document-code-block";
 import type { RefinedParagraph } from "@/types/document-pipeline";
+import type { DocumentImage } from "@/types/document-image";
+import {
+  formatSectionsAsContent,
+  isSectionHeadingLine,
+} from "@/lib/translation/translation-section-utils";
+
+interface DocumentSection {
+  heading: string;
+  bodyParagraphs: string[];
+  sectionIndex: number;
+  images: DocumentImage[];
+  codeBlocks: DocumentCodeBlock[];
+}
+
+const normalizeSectionHeading = (heading: string): string => {
+  return heading.replace(/^#{1,6}\s/, "").trim();
+};
+
+export const buildDocumentSections = (
+  documentTitle: string,
+  paragraphs: RefinedParagraph[],
+  images: DocumentImage[] = [],
+  codeBlocks: DocumentCodeBlock[] = [],
+): DocumentSection[] => {
+  const sections: DocumentSection[] = [];
+  let currentHeading = documentTitle;
+  let currentBodyParagraphs: string[] = [];
+  let sectionIndex = 0;
+
+  const flushSection = (): void => {
+    if (currentBodyParagraphs.length === 0) {
+      return;
+    }
+
+    sections.push({
+      heading: currentHeading,
+      bodyParagraphs: [...currentBodyParagraphs],
+      sectionIndex,
+      images: images.filter((image) => image.sectionIndex === sectionIndex),
+      codeBlocks: codeBlocks.filter(
+        (block) => block.sectionIndex === sectionIndex,
+      ),
+    });
+    currentBodyParagraphs = [];
+  };
+
+  paragraphs.forEach(({ text }) => {
+    const trimmedText = text.trim();
+    const isHeading =
+      isSectionHeadingLine(trimmedText) && !trimmedText.includes("\n");
+
+    if (isHeading) {
+      flushSection();
+      sectionIndex += 1;
+      currentHeading = normalizeSectionHeading(trimmedText);
+      return;
+    }
+
+    currentBodyParagraphs.push(text);
+  });
+
+  flushSection();
+
+  if (sections.length === 0 && paragraphs.length > 0) {
+    sections.push({
+      heading: documentTitle,
+      bodyParagraphs: paragraphs.map((paragraph) => paragraph.text),
+      sectionIndex: 0,
+      images: images.filter((image) => image.sectionIndex === 0),
+      codeBlocks: codeBlocks.filter((block) => block.sectionIndex === 0),
+    });
+  }
+
+  return sections;
+};
+
+const formatImageBlock = (image: DocumentImage): string => {
+  const altText = image.alt || image.caption || "diagram";
+
+  return [
+    `[문서 이미지 ${image.id}]`,
+    `url: ${image.url}`,
+    `alt: ${altText}`,
+  ].join("\n");
+};
+
+const formatCodeBlock = (block: DocumentCodeBlock): string => {
+  const variantLines = block.variants
+    .filter((variant) => variant.code.trim())
+    .map((variant) => {
+      const label = variant.packageManager
+        ? `[${variant.packageManager}]`
+        : "[코드]";
+
+      return `${label}\n${variant.code}`;
+    });
+
+  return [`[문서 코드 ${block.id}]`, ...variantLines].join("\n");
+};
+
+const formatSectionBlock = (section: DocumentSection): string => {
+  const imageBlocks =
+    section.images.length > 0
+      ? ["[문서 이미지]", ...section.images.map(formatImageBlock)].join("\n")
+      : "";
+
+  const codeBlocks =
+    section.codeBlocks.length > 0
+      ? ["[문서 코드 블록]", ...section.codeBlocks.map(formatCodeBlock)].join(
+          "\n\n",
+        )
+      : "";
+
+  return [
+    "--- 섹션 ---",
+    `[섹션 제목] ${section.heading}`,
+    imageBlocks,
+    codeBlocks,
+    "[원문 본문]",
+    section.bodyParagraphs.join("\n\n"),
+  ]
+    .filter((line) => line.length > 0)
+    .join("\n");
+};
 
 export const buildOriginalContent = (
+  title: string,
   paragraphs: RefinedParagraph[],
+  images: DocumentImage[] = [],
+  codeBlocks: DocumentCodeBlock[] = [],
 ): string => {
-  return paragraphs.map((paragraph) => paragraph.text).join("\n\n");
+  const sections = buildDocumentSections(title, paragraphs, images, codeBlocks);
+
+  return formatSectionsAsContent(
+    sections.map((section) => ({
+      heading: section.heading,
+      body: section.bodyParagraphs.join("\n\n"),
+    })),
+  );
 };
 
 export const prepareAiInput = (
   title: string,
   paragraphs: RefinedParagraph[],
+  images: DocumentImage[] = [],
+  codeBlocks: DocumentCodeBlock[] = [],
 ): string => {
-  const paragraphBlocks = paragraphs
-    .map(
-      (paragraph) =>
-        `[문단 ${paragraph.index} | 중요도 ${paragraph.score.toFixed(1)}]\n${paragraph.text}`,
-    )
-    .join("\n\n");
+  const sections = buildDocumentSections(title, paragraphs, images, codeBlocks);
 
   return [
-    "=== 정제된 기술 문서 ===",
-    `제목: ${title}`,
-    "설명: HTML 본문 추출 → 문단 분리 → 중요도 필터를 거친 텍스트입니다.",
+    "=== 정제된 기술 문서 (섹션 단위) ===",
+    `문서 제목: ${title}`,
+    "설명: HTML 본문 추출 → 섹션 제목 기준으로 묶은 원문입니다.",
+    "각 [섹션 제목]은 페이지의 큰 제목(h1/h2, 앵커 링크 제목) 또는 소제목입니다.",
+    "[문서 코드 블록]의 명령어·코드는 원문 그대로 유지하고, 설명만 한국어로 번역하세요.",
     "",
-    paragraphBlocks,
+    sections.map(formatSectionBlock).join("\n\n"),
   ].join("\n");
 };

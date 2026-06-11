@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import type { ReactElement } from "react";
 import { HistoryDatePicker } from "@/components/molecules/document/history-date-picker";
 import { HistoryListItem } from "@/components/molecules/document/history-list-item";
@@ -14,6 +13,7 @@ import type {
 interface TranslationHistoryPanelProps {
   selectedTranslationId: string | null;
   onSelectHistory: (item: DocumentTranslationResult) => void;
+  onDeletedTranslation?: (translationId: string) => void;
   refreshKey: number;
 }
 
@@ -28,6 +28,8 @@ const toTranslationResult = (
     originalContent: item.originalContent ?? "",
     translatedContent: item.translatedContent,
     summaryTerms: item.summaryTerms,
+    documentImages: item.documentImages,
+    documentCodeBlocks: item.documentCodeBlocks,
     createdAt: item.createdAt,
   };
 };
@@ -35,6 +37,7 @@ const toTranslationResult = (
 export const TranslationHistoryPanel = ({
   selectedTranslationId,
   onSelectHistory,
+  onDeletedTranslation,
   refreshKey,
 }: TranslationHistoryPanelProps): ReactElement => {
   const {
@@ -42,18 +45,23 @@ export const TranslationHistoryPanel = ({
     selectedDateKey,
     currentPage,
     isLoading,
+    deletingId,
     errorMessage,
     setSelectedDateKey,
     setCurrentPage,
-    refreshHistory,
-  } = useTranslationHistory();
-
-  useEffect(() => {
-    void refreshHistory();
-  }, [refreshKey, refreshHistory]);
+    deleteHistoryItem,
+  } = useTranslationHistory(refreshKey);
 
   const handleSelect = (item: TranslationHistoryItem): void => {
     onSelectHistory(toTranslationResult(item));
+  };
+
+  const handleDelete = async (item: TranslationHistoryItem): Promise<void> => {
+    const isDeleted = await deleteHistoryItem(item.id);
+
+    if (isDeleted) {
+      onDeletedTranslation?.(item.id);
+    }
   };
 
   const historyItems = historyResponse?.items ?? [];
@@ -122,7 +130,11 @@ export const TranslationHistoryPanel = ({
                   <HistoryListItem
                     item={item}
                     isSelected={selectedTranslationId === item.id}
+                    isDeleting={deletingId === item.id}
                     onSelect={handleSelect}
+                    onDelete={(historyItem) => {
+                      void handleDelete(historyItem);
+                    }}
                   />
                 </li>
               ))}

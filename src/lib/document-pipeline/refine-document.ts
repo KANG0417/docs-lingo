@@ -7,7 +7,9 @@ import {
   prepareAiInput,
 } from "@/lib/document-pipeline/prepare-ai-input";
 import { splitParagraphs } from "@/lib/document-pipeline/split-paragraphs";
-import { TranslationError } from "@/lib/translation-errors";
+import { extractDocumentImages } from "@/lib/document/extract-document-images";
+import { extractDocumentCodeBlocks } from "@/lib/document/extract-document-code-blocks";
+import { TranslationError } from "@/lib/translation/translation-errors";
 import type { RefinedDocument } from "@/types/document-pipeline";
 
 export const refineDocumentFromUrl = async (
@@ -28,6 +30,14 @@ export const refineDocumentFromUrl = async (
   }
 
   const linkedSectionHeadings = extractLinkedSectionHeadings(fetchedDocument.html);
+  const documentImages = extractDocumentImages(
+    fetchedDocument.html,
+    fetchedDocument.url,
+  );
+  const documentCodeBlocks = await extractDocumentCodeBlocks(
+    fetchedDocument.html,
+    fetchedDocument.url,
+  );
   const rawParagraphs = splitParagraphs(
     extractedDocument.textContent,
     linkedSectionHeadings,
@@ -42,8 +52,18 @@ export const refineDocumentFromUrl = async (
     );
   }
 
-  const originalContent = buildOriginalContent(filteredParagraphs);
-  const aiInput = prepareAiInput(extractedDocument.title, filteredParagraphs);
+  const originalContent = buildOriginalContent(
+    extractedDocument.title,
+    filteredParagraphs,
+    documentImages,
+    documentCodeBlocks,
+  );
+  const aiInput = prepareAiInput(
+    extractedDocument.title,
+    filteredParagraphs,
+    documentImages,
+    documentCodeBlocks,
+  );
 
   return {
     title: extractedDocument.title,
@@ -51,6 +71,8 @@ export const refineDocumentFromUrl = async (
     rawParagraphCount: rawParagraphs.length,
     filteredParagraphCount: filteredParagraphs.length,
     paragraphs: filteredParagraphs,
+    documentImages,
+    documentCodeBlocks,
     originalContent,
     aiInput,
   };
