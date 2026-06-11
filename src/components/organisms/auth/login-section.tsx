@@ -12,7 +12,7 @@ export const LoginSection = (): ReactElement => {
   };
 
   return (
-    <article className="flex w-full max-w-sm flex-col gap-8">
+    <article className="font-doc-title flex w-full max-w-sm flex-col gap-8">
       <header className="flex flex-col gap-2">
         <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
           로그인

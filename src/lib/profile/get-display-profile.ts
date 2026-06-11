@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AUTH_FORCE_SIGNOUT_PATH } from "@/constants/auth";
 import { getUserProfileOrEnsure } from "@/services/profile-service";
 import type { Session } from "next-auth";
 
@@ -6,8 +7,6 @@ interface DisplayProfile {
   nickname: string;
   image: string | null;
 }
-
-const FORCE_SIGNOUT_PATH = "/api/auth/force-signout";
 
 export const getDisplayProfile = async (
   session: Session,
@@ -25,7 +24,7 @@ export const getDisplayProfile = async (
   );
 
   if (!profile) {
-    redirect(FORCE_SIGNOUT_PATH);
+    redirect(AUTH_FORCE_SIGNOUT_PATH);
   }
 
   return {

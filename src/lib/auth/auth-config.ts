@@ -1,11 +1,16 @@
 import type { NextAuthConfig } from "next-auth";
+import { SESSION_MAX_AGE_SECONDS } from "@/constants/auth";
 
 // 미들웨어(proxy)에서도 사용하는 edge-safe 공통 설정.
 // 어댑터/프로바이더처럼 Node 전용 의존성은 lib/auth.ts에서만 추가한다.
 export const authConfig = {
   providers: [],
+  trustHost: true,
   session: {
     strategy: "jwt",
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    // 0 → 매 요청 jwt 콜백(session_version 검증). exp 연장은 jwt 콜백에서 막음
+    updateAge: 0,
   },
   pages: {
     signIn: "/",
@@ -19,7 +24,7 @@ export const authConfig = {
       return session;
     },
     authorized: ({ auth }) => {
-      return Boolean(auth?.user);
+      return Boolean(auth?.user?.id);
     },
   },
 } satisfies NextAuthConfig;

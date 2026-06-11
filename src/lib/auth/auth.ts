@@ -7,7 +7,7 @@ import Naver from "next-auth/providers/naver";
 import type { KakaoProfile } from "next-auth/providers/kakao";
 import type { NaverProfile } from "next-auth/providers/naver";
 import { authConfig } from "@/lib/auth/auth-config";
-import { syncUserProfile } from "@/services/profile-service";
+import { getSessionVersion, syncUserProfile } from "@/services/profile-service";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -25,6 +25,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
+      authorization: {
+        params: {
+          prompt: "select_account",
+        },
+      },
     }),
     Kakao({
       clientId: process.env.AUTH_KAKAO_ID,
@@ -33,6 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         url: "https://kauth.kakao.com/oauth/authorize",
         params: {
           scope: "profile_nickname profile_image",
+          prompt: "login",
         },
       },
       profile: (profile: KakaoProfile) => ({
@@ -51,6 +57,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.AUTH_NAVER_SECRET,
       authorization: {
         url: "https://nid.naver.com/oauth2.0/authorize",
+        params: {
+          auth_type: "reprompt",
+        },
       },
       profile: (profile: NaverProfile) => ({
         id: profile.response.id,
@@ -66,25 +75,66 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   callbacks: {
     ...authConfig.callbacks,
-    jwt: ({ token, user }) => {
+    jwt: async ({ token, user, trigger }) => {
+      if (user?.id) {
+        token.sub = user.id;
+        token.sessionVersion = await getSessionVersion(user.id);
+      }
+
       if (user?.name) {
         token.name = user.name;
       }
+
       if (user?.image) {
         token.picture = user.image;
       }
+
+      if (!token.sub) {
+        return token;
+      }
+
+      const currentVersion = await getSessionVersion(token.sub);
+      const tokenVersion =
+        typeof token.sessionVersion === "number" ? token.sessionVersion : -1;
+
+      if (tokenVersion !== currentVersion) {
+        return { ...token, exp: 0 };
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired =
+        typeof token.exp === "number" && token.exp <= now;
+
+      if (isExpired) {
+        return { ...token, exp: 0 };
+      }
+
+      // updateAge: 0 이면 매 요청 update가 발생하므로, exp를 늘리지 않고 1일 고정 만료 유지
+      if (trigger === "update") {
+        return token;
+      }
+
       return token;
     },
     session: ({ session, token }) => {
-      if (token.sub) {
-        session.user.id = token.sub;
+      const isExpired =
+        typeof token.exp === "number" &&
+        token.exp <= Math.floor(Date.now() / 1000);
+
+      if (!token.sub || isExpired) {
+        return session;
       }
+
+      session.user.id = token.sub;
+
       if (token.name) {
         session.user.name = token.name;
       }
+
       if (token.picture) {
         session.user.image = token.picture;
       }
+
       return session;
     },
   },

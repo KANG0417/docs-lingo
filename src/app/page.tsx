@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const HomePage = async (): Promise<ReactElement> => {
   const session = await auth();
 
-  if (session?.user) {
+  if (session?.user?.id) {
     redirect("/main");
   }
 

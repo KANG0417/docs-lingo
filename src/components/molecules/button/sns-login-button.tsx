@@ -23,7 +23,7 @@ export const SnsLoginButton = ({
       type="button"
       onClick={handleClick}
       className={clsx(
-        "flex h-12 w-full items-center justify-center gap-3 rounded-xl px-5",
+        "font-doc-title flex h-12 w-full items-center justify-center gap-3 rounded-xl px-5",
         "text-sm font-semibold transition-all duration-150",
         "hover:-translate-y-0.5 hover:shadow-md active:translate-y-0",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500",

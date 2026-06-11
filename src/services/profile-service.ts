@@ -16,6 +16,7 @@ interface ProfileRow {
   nickname: string;
   image: string | null;
   withdrawal_scheduled_at: string | null;
+  session_version?: number;
 }
 
 interface ProfileHistoryRow {
@@ -155,6 +156,44 @@ export const getNicknameChangePolicy = async (
 ): Promise<{ nextChangeAt: string | null }> => {
   const lastChangedAt = await getLastNicknameChangeAt(userId);
   return resolveNicknameChangePolicy(lastChangedAt);
+};
+
+export const getSessionVersion = async (userId: string): Promise<number> => {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    return 0;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("session_version")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[getSessionVersion]", error.message);
+    return 0;
+  }
+
+  return data?.session_version ?? 0;
+};
+
+export const incrementSessionVersion = async (userId: string): Promise<void> => {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    return;
+  }
+
+  const currentVersion = await getSessionVersion(userId);
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ session_version: currentVersion + 1 })
+    .eq("id", userId);
+
+  if (error) {
+    console.error("[incrementSessionVersion]", error.message);
+  }
 };
 
 export const getUserProfile = async (

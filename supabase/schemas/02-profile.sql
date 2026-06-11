@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.profiles
     nickname text NOT NULL,
     image text,
     withdrawal_scheduled_at timestamp with time zone,
+    session_version integer NOT NULL DEFAULT 0,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT profiles_pkey PRIMARY KEY (id),
@@ -44,6 +45,9 @@ ALTER TABLE public.user_ai_settings
 
 ALTER TABLE public.user_ai_settings
     ADD COLUMN IF NOT EXISTS updated_at timestamp with time zone NOT NULL DEFAULT now();
+
+ALTER TABLE public.profiles
+    ADD COLUMN IF NOT EXISTS session_version integer NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS public.profile_histories
 (
