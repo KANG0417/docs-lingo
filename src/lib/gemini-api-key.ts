@@ -35,7 +35,6 @@ export const createInvalidGeminiApiKeyMessage = (hasUserApiKey: boolean): string
   return [
     "서버 AI API 키 형식이 올바르지 않습니다.",
     "Google AI Studio(https://aistudio.google.com/apikey)에서 발급한",
-    "'AIza' 또는 'AQ.'로 시작하는 키를 .env.local의 GEMINI_API_KEY에 설정하거나,",
-    "개인정보 변경 메뉴의 AI 도구 설정에서 본인 키를 등록해 주세요.",
+    "'AIza' 또는 'AQ.'로 시작하는 키를 .env.local의 GEMINI_API_KEY에 설정해 주세요.",
   ].join("\n");
 };

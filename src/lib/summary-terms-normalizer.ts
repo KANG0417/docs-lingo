@@ -181,10 +181,28 @@ const removeSubstringDuplicates = (terms: KeywordTerm[]): KeywordTerm[] => {
   });
 };
 
+const containsHangul = (value: string): boolean => {
+  return /[\u3131-\uD7A3]/.test(value);
+};
+
+const demoteKoreanTermsToEmphasis = (terms: KeywordTerm[]): KeywordTerm[] => {
+  return terms.map((item) => {
+    if (!containsHangul(item.term)) {
+      return item;
+    }
+
+    return {
+      ...item,
+      isCoreKeyword: false,
+    };
+  });
+};
+
 const assignCoreKeywordFlags = (terms: KeywordTerm[]): KeywordTerm[] => {
   const coreTermKeys = new Set(
     terms
       .filter((item) => !isGenericDocTerm(item.term))
+      .filter((item) => !containsHangul(item.term))
       .slice(0, MAX_CORE_KEYWORDS)
       .map((item) => normalizeTermKey(item.term)),
   );
@@ -223,6 +241,7 @@ export const normalizeSummaryTerms = (
     removeLongerGenericVariants,
     removeSubstringDuplicates,
     deduplicateByTerm,
+    demoteKoreanTermsToEmphasis,
     assignCoreKeywordFlags,
   ];
 

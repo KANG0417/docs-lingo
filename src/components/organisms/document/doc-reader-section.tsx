@@ -45,7 +45,7 @@ export const DocReaderSection = (): ReactElement => {
     }
 
     if (mode === "text" && textInput.trim()) {
-      readFromText(textInput);
+      void readFromText(textInput.trim());
     }
   };
 

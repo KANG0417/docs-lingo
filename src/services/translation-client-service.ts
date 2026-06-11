@@ -3,13 +3,13 @@ import type {
   TranslationHistoryItem,
 } from "@/types/translation";
 
-export const translateDocumentFromUrl = async (
-  url: string,
+const requestTranslation = async (
+  payload: { url: string } | { text: string },
 ): Promise<DocumentTranslationResult> => {
   const response = await fetch("/api/documents/translate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -18,6 +18,18 @@ export const translateDocumentFromUrl = async (
   }
 
   return (await response.json()) as DocumentTranslationResult;
+};
+
+export const translateDocumentFromUrl = async (
+  url: string,
+): Promise<DocumentTranslationResult> => {
+  return requestTranslation({ url });
+};
+
+export const translateDocumentFromText = async (
+  text: string,
+): Promise<DocumentTranslationResult> => {
+  return requestTranslation({ text });
 };
 
 export const getTranslationHistory = async (): Promise<TranslationHistoryItem[]> => {

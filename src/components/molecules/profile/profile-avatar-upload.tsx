@@ -61,10 +61,6 @@ export const ProfileAvatarUpload = ({
           tabIndex={-1}
         />
       </div>
-
-      <p className="text-sm font-semibold text-amber-800">
-        {isUploading ? "이미지 업로드 중..." : "사진 아이콘을 눌러 이미지를 변경하세요"}
-      </p>
     </div>
   );
 };

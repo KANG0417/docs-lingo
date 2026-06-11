@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { ReactElement } from "react";
-import { AiSettingsSection } from "@/components/organisms/profile/ai-settings-section";
 import { ProfileSection } from "@/components/organisms/profile/profile-section";
 import { Navbar } from "@/components/organisms/header/navbar";
 import { DashboardTemplate } from "@/components/templates/dashboard/dashboard-template";
@@ -11,7 +10,7 @@ import { getUserProfile } from "@/services/profile-service";
 
 export const metadata: Metadata = {
   title: "독스링고 - 개인정보 변경",
-  description: "닉네임, 프로필 이미지, AI 도구 설정을 관리하세요.",
+  description: "닉네임과 프로필 이미지를 관리하세요.",
 };
 
 const ProfilePage = async (): Promise<ReactElement> => {
@@ -37,10 +36,7 @@ const ProfilePage = async (): Promise<ReactElement> => {
         />
       }
     >
-      <div className="flex w-full flex-col items-center gap-8">
-        <ProfileSection profile={profile} />
-        <AiSettingsSection />
-      </div>
+      <ProfileSection profile={profile} />
     </DashboardTemplate>
   );
 };

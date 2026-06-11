@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactElement } from "react";
 import { ProfileAvatarUpload } from "@/components/molecules/profile/profile-avatar-upload";
 import { useProfile } from "@/hooks/use-profile";
+import { validateProfileImageClient } from "@/lib/validate-profile-image-client";
 import type { UserProfile } from "@/types/user";
 
 interface ProfileSectionProps {
@@ -25,27 +26,77 @@ export const ProfileSection = ({
   } = useProfile();
 
   const [nickname, setNickname] = useState<string>(profile.nickname);
-  const [imageUrl, setImageUrl] = useState<string>(profile.image ?? "");
+  const [savedImageUrl, setSavedImageUrl] = useState<string>(profile.image ?? "");
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(
+    profile.image ?? null,
+  );
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [imageSelectError, setImageSelectError] = useState<string | null>(null);
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState<boolean>(false);
+  const previewObjectUrlRef = useRef<string | null>(null);
 
-  const previewImage = imageUrl.trim() || null;
+  const revokePreviewObjectUrl = (): void => {
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      revokePreviewObjectUrl();
+    };
+  }, []);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
-    void updateProfile({
-      nickname,
-      image: previewImage,
-    });
+    void (async () => {
+      setImageSelectError(null);
+
+      let imageToSave = savedImageUrl.trim() || null;
+
+      if (pendingImageFile) {
+        const uploadedImageUrl = await uploadProfileImage(pendingImageFile);
+        if (!uploadedImageUrl) {
+          return;
+        }
+
+        imageToSave = uploadedImageUrl;
+      }
+
+      const isSaved = await updateProfile({
+        nickname,
+        image: imageToSave,
+      });
+
+      if (!isSaved || !pendingImageFile) {
+        return;
+      }
+
+      revokePreviewObjectUrl();
+      setPendingImageFile(null);
+      setSavedImageUrl(imageToSave ?? "");
+      setPreviewImageUrl(imageToSave);
+    })();
   };
 
   const handleImageSelect = (file: File): void => {
-    void (async () => {
-      const uploadedImageUrl = await uploadProfileImage(file);
-      if (uploadedImageUrl) {
-        setImageUrl(uploadedImageUrl);
-      }
-    })();
+    const validationMessage = validateProfileImageClient(file);
+
+    if (validationMessage) {
+      setImageSelectError(validationMessage);
+      return;
+    }
+
+    setImageSelectError(null);
+
+    revokePreviewObjectUrl();
+
+    const objectUrl = URL.createObjectURL(file);
+    previewObjectUrlRef.current = objectUrl;
+    setPendingImageFile(file);
+    setPreviewImageUrl(objectUrl);
   };
 
   const handleWithdrawClick = (): void => {
@@ -59,6 +110,9 @@ export const ProfileSection = ({
   const handleWithdrawConfirm = (): void => {
     void withdrawAccount();
   };
+
+  const isBusy = isSaving || isUploadingImage || isWithdrawing;
+  const hasPendingImage = pendingImageFile !== null;
 
   return (
     <section
@@ -87,9 +141,9 @@ export const ProfileSection = ({
           <div className="mb-6 flex flex-col items-center border-b border-dashed border-amber-300 pb-6">
             <ProfileAvatarUpload
               nickname={nickname}
-              imageUrl={previewImage}
+              imageUrl={previewImageUrl}
               isUploading={isUploadingImage}
-              disabled={isSaving || isUploadingImage || isWithdrawing}
+              disabled={isBusy}
               onImageSelect={handleImageSelect}
             />
           </div>
@@ -106,38 +160,45 @@ export const ProfileSection = ({
                 placeholder="사용할 닉네임을 입력해주세요"
                 required
                 maxLength={20}
-                disabled={isSaving || isUploadingImage || isWithdrawing}
+                disabled={isBusy}
                 className="h-12 w-full rounded-md border border-dashed border-amber-400 bg-white/80 px-4 text-sm text-zinc-900 placeholder:text-amber-700/40 focus:border-solid focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-amber-100/50"
               />
             </label>
-
           </div>
+
+          <button
+            type="submit"
+            disabled={isBusy}
+            className="mt-6 flex h-11 w-full items-center justify-center rounded-md bg-[#0a1030] text-sm font-semibold text-indigo-100 transition-all duration-150 hover:-translate-y-0.5 hover:bg-[#141c4a] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#0a1030]/40"
+          >
+            {isSaving || isUploadingImage ? "저장 중..." : "변경사항 저장"}
+          </button>
+
+          <p className="mt-3 text-center text-sm font-semibold text-amber-800">
+            {isUploadingImage
+              ? "이미지 저장 중..."
+              : hasPendingImage
+                ? "미리보기 중입니다. 변경사항 저장을 눌러 반영하세요."
+                : "사진 아이콘을 눌러 이미지를 변경하세요."}
+          </p>
 
           {successMessage && (
             <p
               role="status"
-              className="mt-5 rounded-md border border-dashed border-emerald-400 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+              className="mt-2 text-center text-sm font-semibold text-emerald-700"
             >
               {successMessage}
             </p>
           )}
 
-          {errorMessage && (
+          {(imageSelectError || errorMessage) && (
             <p
               role="alert"
-              className="mt-5 rounded-md border border-dashed border-red-400 bg-red-50 px-4 py-3 text-sm text-red-600"
+              className="mt-2 text-center text-sm font-semibold text-red-600"
             >
-              {errorMessage}
+              {imageSelectError ?? errorMessage}
             </p>
           )}
-
-          <button
-            type="submit"
-            disabled={isSaving || isUploadingImage || isWithdrawing}
-            className="mt-6 flex h-11 w-full items-center justify-center rounded-md bg-[#0a1030] text-sm font-semibold text-indigo-100 transition-all duration-150 hover:-translate-y-0.5 hover:bg-[#141c4a] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:bg-[#0a1030]/40"
-          >
-            {isSaving ? "저장 중..." : "변경사항 저장"}
-          </button>
         </form>
       </div>
 
@@ -158,7 +219,7 @@ export const ProfileSection = ({
             <button
               type="button"
               onClick={handleWithdrawClick}
-              disabled={isSaving || isUploadingImage || isWithdrawing}
+              disabled={isBusy}
               className="mt-5 inline-flex h-11 w-fit items-center justify-center rounded-md bg-red-600 px-6 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-400"
             >
               탈퇴 하기

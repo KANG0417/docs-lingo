@@ -1,5 +1,7 @@
 import { processRefinedDocument } from "@/lib/document-ai-processor";
+import { refineDocumentFromText } from "@/lib/document-pipeline/refine-document-from-text";
 import { refineDocumentFromUrl } from "@/lib/document-pipeline/refine-document";
+import { getTranslationDayRange } from "@/lib/translation-day-range";
 import {
   TranslationError,
   toTranslationError,
@@ -90,7 +92,20 @@ export const saveTranslation = async ({
     throw new Error("문서 저장에 실패했습니다.");
   }
 
-  const insertTranslation = async (
+  const { startIso, endIso } = getTranslationDayRange();
+
+  const { data: existingTodayTranslation } = await supabase
+    .from("translations")
+    .select("id, created_at")
+    .eq("user_id", userId)
+    .eq("document_id", documentRow.id)
+    .gte("created_at", startIso)
+    .lte("created_at", endIso)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const persistTranslation = async (
     includeExtendedColumns: boolean,
   ): Promise<{ id: string; created_at: string } | null> => {
     const basePayload = {
@@ -109,6 +124,22 @@ export const saveTranslation = async ({
         }
       : basePayload;
 
+    if (existingTodayTranslation) {
+      const { data, error } = await supabase
+        .from("translations")
+        .update(payload)
+        .eq("id", existingTodayTranslation.id)
+        .select("id, created_at")
+        .single();
+
+      if (error) {
+        console.error("[saveTranslation] translation update", error.message);
+        return null;
+      }
+
+      return data;
+    }
+
     const { data, error } = await supabase
       .from("translations")
       .insert(payload)
@@ -116,17 +147,17 @@ export const saveTranslation = async ({
       .single();
 
     if (error) {
-      console.error("[saveTranslation] translation", error.message);
+      console.error("[saveTranslation] translation insert", error.message);
       return null;
     }
 
     return data;
   };
 
-  let translationRow = await insertTranslation(true);
+  let translationRow = await persistTranslation(true);
 
   if (!translationRow) {
-    translationRow = await insertTranslation(false);
+    translationRow = await persistTranslation(false);
   }
 
   if (!translationRow) {
@@ -147,21 +178,15 @@ export const saveTranslation = async ({
   };
 };
 
-export const translateDocumentFromUrl = async (
+const translateRefinedDocument = async (
   userId: string,
-  url: string,
-  userNickname?: string | null,
+  refinedDocument: {
+    title: string;
+    url: string;
+    originalContent: string;
+    aiInput: string;
+  },
 ): Promise<DocumentTranslationResult> => {
-  await ensureUserProfileExists(userId, userNickname?.trim() || "사용자");
-
-  let refinedDocument: Awaited<ReturnType<typeof refineDocumentFromUrl>>;
-
-  try {
-    refinedDocument = await refineDocumentFromUrl(url);
-  } catch (error) {
-    throw toTranslationError(error);
-  }
-
   const userAiCredentials = await getUserAiCredentials(userId);
 
   let processedDocument: Awaited<ReturnType<typeof processRefinedDocument>>;
@@ -187,6 +212,42 @@ export const translateDocumentFromUrl = async (
     translatedContent,
     summaryTerms,
   });
+};
+
+export const translateDocumentFromUrl = async (
+  userId: string,
+  url: string,
+  userNickname?: string | null,
+): Promise<DocumentTranslationResult> => {
+  await ensureUserProfileExists(userId, userNickname?.trim() || "사용자");
+
+  let refinedDocument: Awaited<ReturnType<typeof refineDocumentFromUrl>>;
+
+  try {
+    refinedDocument = await refineDocumentFromUrl(url);
+  } catch (error) {
+    throw toTranslationError(error);
+  }
+
+  return translateRefinedDocument(userId, refinedDocument);
+};
+
+export const translateDocumentFromText = async (
+  userId: string,
+  text: string,
+  userNickname?: string | null,
+): Promise<DocumentTranslationResult> => {
+  await ensureUserProfileExists(userId, userNickname?.trim() || "사용자");
+
+  let refinedDocument: ReturnType<typeof refineDocumentFromText>;
+
+  try {
+    refinedDocument = refineDocumentFromText(text);
+  } catch (error) {
+    throw toTranslationError(error);
+  }
+
+  return translateRefinedDocument(userId, refinedDocument);
 };
 
 const HISTORY_SELECT_FULL =

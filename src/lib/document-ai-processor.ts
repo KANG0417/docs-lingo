@@ -13,6 +13,7 @@ import {
   TranslationError,
 } from "@/lib/translation-errors";
 import type { UserAiCredentials } from "@/types/ai-settings";
+import { normalizeTranslatedLayout } from "@/lib/normalize-translated-layout";
 import { normalizeSummaryTerms } from "@/lib/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
 
@@ -32,28 +33,43 @@ export interface ProcessedDocument {
 }
 
 const normalizeTranslatedContent = (content: string): string => {
-  return content
-    .replace(/\r\n/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+  return normalizeTranslatedLayout(content);
 };
 
-const buildInterpretationPrompt = (
-  title: string,
-  refinedAiInput: string,
-): string => {
-  return `당신은 기술 문서 해석 전문가입니다.
-아래 입력은 URL 문서를 HTML fetch → Readability 본문 추출 → 문단 분리 → 중요도 필터를 거친 "정제 텍스트"입니다.
+const buildInterpretationPrompt = (documentContent: string): string => {
+  return `아래 문서를 한국어로 번역하세요.
 
-당신의 역할:
-- HTML을 다시 읽거나 추측하지 마세요.
-- 제공된 정제 텍스트만 해석하세요.
-- 정제 텍스트를 한국어로 번역하고 핵심 키워드를 추출하세요.
+출력 형식:
+- 원문의 제목/문단 구조를 그대로 유지합니다. "문단 1" 같은 라벨을 붙이지 마세요.
+- 링크가 걸린 큰 제목(예: What is Next.js?, How to use the docs)을 기준으로 섹션을 나눕니다.
+- 각 섹션은 "제목 한 줄 + 그 아래 본문" 형태로 유지합니다. 제목과 본문을 합치거나 섹션을 쪼개지 마세요.
+- 섹션 내부의 줄바꿈·빈 줄·목록 구조는 원문과 동일하게 유지합니다.
+- 인사말, 설명, 요약을 덧붙이지 마세요. 번역된 문서만 출력합니다.
 
-문서 제목: ${title}
+용어 표기 규칙:
 
-[정제된 AI 입력]
-${refinedAiInput}
+1. 제목·섹션명·메뉴명 (Getting Started, API Reference, How to use these docs 등)
+   → 자연스러운 한국어로 번역만 합니다. 밑줄·백틱 등 아무 표시도 하지 않습니다.
+   - 예: "Getting Started" → "시작하기", "How to use these docs" → "문서 사용 방법"
+
+2. 본문 문장 안에 나오는 두 단어 이상의 기술 개념어
+   → 밑줄 <u></u>
+   - 예: <u>App Router</u>, <u>Server Component</u>
+
+3. 인라인 코드(백틱):
+   a. 한 단어짜리 기술/언어 이름: \`React\`, \`HTML\`, \`CSS\`
+   b. 코드에 실제 입력되는 것: \`next.config.js\`, \`useRouter\`, \`npm run dev\`
+
+4. 영문 고유명사 + 한글 혼용 표기는 영문 기술 용어로 통일합니다.
+   - 잘못된 예: "React 컴포넌트", "Next.js 프레임워크", "서버 컴포넌트"
+   - 올바른 예: "React Components", "Next.js framework", "Server Components"
+   - 본문에서 기술 개념은 가능한 한 영문 표기를 유지하고, 한글 번역과 섞지 마세요.
+
+5. 그 외 일반 단어에는 아무 표시도 추가하지 않습니다.
+
+<document>
+${documentContent}
+</document>
 
 다음 JSON 형식으로만 응답하세요:
 {
@@ -67,30 +83,30 @@ ${refinedAiInput}
   ]
 }
 
-번역 형식 규칙 (매우 중요):
-- 입력의 [문단 N] 단위를 그대로 유지하세요.
-- translatedContent에서 문단과 문단 사이는 반드시 빈 줄 1개(\\n\\n)로 구분하세요.
-- 한 문단 안에서 원문 줄바꿈이 있으면 \\n 으로 표현하세요.
-- 모든 문장을 한 줄로 이어 붙이지 마세요.
+translatedContent 추가 규칙:
+- 위 출력 형식·용어 표기 규칙을 그대로 적용한 결과만 넣으세요.
+- 본문에 <u> 또는 백틱으로 표시한 용어는 translatedContent에 반드시 포함하세요.
 
-키워드 규칙:
+키워드 규칙 (summaryTerms):
 - summaryTerms는 최대 8개, 같은 용어를 중복 등록하지 마세요.
-- 핵심 용어 4개만 isCoreKeyword: true (본문에서 코드블록 강조)
-- 나머지 용어는 isCoreKeyword: false (본문에서 밑줄 강조)
-- term은 translatedContent에 실제 등장하는 표기와 정확히 일치해야 합니다.
-- API명, 함수명, 라이브러리명, 프로토콜명 같은 기술 개념만 핵심 키워드로 선택하세요.
-- API Reference, Documentation, Guide, Overview, Introduction, Changelog 같은 문서/내비게이션 용어는 핵심 키워드에서 제외하세요.
-- description에는 용어 설명만 작성하세요. 용어명을 description 앞에 반복하지 마세요.
-  (잘못된 예: "React: UI 라이브러리" / 올바른 예: "UI 라이브러리")`;
+- translatedContent에 <u>로 표시한 용어는 isCoreKeyword: false로 등록하세요. (term에는 태그 없이 용어만)
+- translatedContent에 백틱으로 표시한 용어는 isCoreKeyword: true로 등록하세요. (term에는 백틱 없이 용어만)
+- 제목·섹션명·메뉴명(시작하기, 문서 사용 방법 등)은 summaryTerms에 넣지 마세요.
+- term은 translatedContent 본문에 실제 등장하는 표기와 정확히 일치해야 합니다.
+- API Reference, Documentation, Guide, Overview, Introduction, Changelog 같은 내비게이션 용어는 제외하세요.
+- description에는 용어 설명만 한국어로 작성하세요. 용어명을 description 앞에 반복하지 마세요.
+  (잘못된 예: "React: UI 라이브러리" / 올바른 예: "UI 라이브러리")
+- 설정 파일·표준 명칭은 역할을 함께 설명하세요.
+  (예: package.json → "프로젝트 의존성, 실행 스크립트, 메타데이터를 정의하는 npm 패키지 설정 파일")
+  (예: next.config.js → "Next.js 빌드·런타임 동작을 설정하는 구성 파일")`;
 };
 
 const processWithGemini = async (
-  title: string,
-  refinedAiInput: string,
+  originalContent: string,
   userCredentials?: UserAiCredentials | null,
 ): Promise<ProcessedDocument> => {
-  const limitedInput = refinedAiInput.slice(0, MAX_AI_INPUT_LENGTH);
-  const prompt = buildInterpretationPrompt(title, limitedInput);
+  const limitedInput = originalContent.slice(0, MAX_AI_INPUT_LENGTH);
+  const prompt = buildInterpretationPrompt(limitedInput);
 
   try {
     const response = await generateGeminiJson<GeminiDocumentResponse>(prompt, {
@@ -195,7 +211,7 @@ export const processRefinedDocument = async (
 
   if (isGeminiConfigured(userCredentials)) {
     try {
-      return await processWithGemini(title, trimmedAiInput, userCredentials);
+      return await processWithGemini(trimmedContent, userCredentials);
     } catch (error) {
       geminiError =
         error instanceof TranslationError

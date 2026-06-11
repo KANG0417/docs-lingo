@@ -4,7 +4,7 @@ import {
   uploadProfileImage,
   validateProfileImageFile,
 } from "@/services/profile-image-service";
-import { getUserProfile, updateUserProfile } from "@/services/profile-service";
+import { getUserProfile } from "@/services/profile-service";
 
 export const POST = async (request: Request): Promise<NextResponse> => {
   const session = await auth();
@@ -29,6 +29,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   try {
     const { contentType } = validateProfileImageFile(imageFile);
     const fileBuffer = Buffer.from(await imageFile.arrayBuffer());
+
     const currentProfile = await getUserProfile(session.user.id);
 
     const imageUrl = await uploadProfileImage({
@@ -38,12 +39,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       previousImageUrl: currentProfile?.image,
     });
 
-    const profile = await updateUserProfile(session.user.id, {
-      nickname: currentProfile?.nickname ?? session.user.name ?? "사용자",
-      image: imageUrl,
-    });
-
-    return NextResponse.json({ imageUrl, profile });
+    return NextResponse.json({ imageUrl });
   } catch (error) {
     const message =
       error instanceof Error

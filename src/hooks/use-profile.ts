@@ -11,7 +11,7 @@ interface UseProfileReturn {
   isWithdrawing: boolean;
   errorMessage: string | null;
   successMessage: string | null;
-  updateProfile: (payload: UpdateUserProfilePayload) => Promise<void>;
+  updateProfile: (payload: UpdateUserProfilePayload) => Promise<boolean>;
   uploadProfileImage: (file: File) => Promise<string | null>;
   withdrawAccount: () => Promise<void>;
 }
@@ -26,7 +26,7 @@ export const useProfile = (): UseProfileReturn => {
 
   const updateProfile = async (
     payload: UpdateUserProfilePayload,
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     setIsSaving(true);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -46,10 +46,12 @@ export const useProfile = (): UseProfileReturn => {
       const profile = (await response.json()) as UserProfile;
       setSuccessMessage(`${profile.nickname}님의 프로필이 저장되었습니다.`);
       router.refresh();
+      return true;
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "프로필 저장에 실패했습니다.",
       );
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -57,8 +59,6 @@ export const useProfile = (): UseProfileReturn => {
 
   const uploadProfileImage = async (file: File): Promise<string | null> => {
     setIsUploadingImage(true);
-    setErrorMessage(null);
-    setSuccessMessage(null);
 
     try {
       const formData = new FormData();
@@ -74,12 +74,7 @@ export const useProfile = (): UseProfileReturn => {
         throw new Error(message);
       }
 
-      const { imageUrl, profile } = (await response.json()) as {
-        imageUrl: string;
-        profile: UserProfile;
-      };
-      setSuccessMessage(`${profile.nickname}님의 프로필 이미지가 저장되었습니다.`);
-      router.refresh();
+      const { imageUrl } = (await response.json()) as { imageUrl: string };
       return imageUrl;
     } catch (error) {
       setErrorMessage(

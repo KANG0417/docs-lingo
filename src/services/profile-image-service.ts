@@ -13,6 +13,14 @@ const MIME_TO_EXTENSION: Record<ProfileImageMimeType, string> = {
   "image/gif": "gif",
 };
 
+const EXTENSION_TO_MIME: Record<string, ProfileImageMimeType> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+};
+
 interface UploadProfileImageParams {
   userId: string;
   fileBuffer: Buffer;
@@ -44,18 +52,30 @@ const getStoragePathFromPublicUrl = (imageUrl: string): string | null => {
   return imageUrl.slice(publicPrefix.length);
 };
 
+const resolveProfileImageContentType = (
+  file: File,
+): ProfileImageMimeType => {
+  if (isProfileImageMimeType(file.type)) {
+    return file.type;
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+
+  if (extension in EXTENSION_TO_MIME) {
+    return EXTENSION_TO_MIME[extension] as ProfileImageMimeType;
+  }
+
+  throw new Error("JPG, PNG, WEBP, GIF 형식의 이미지만 업로드할 수 있습니다.");
+};
+
 export const validateProfileImageFile = (
   file: File,
 ): { contentType: ProfileImageMimeType } => {
-  if (!isProfileImageMimeType(file.type)) {
-    throw new Error("JPG, PNG, WEBP, GIF 형식의 이미지만 업로드할 수 있습니다.");
-  }
-
   if (file.size > PROFILE_IMAGE_MAX_SIZE_BYTES) {
     throw new Error("프로필 이미지는 5MB 이하만 업로드할 수 있습니다.");
   }
 
-  return { contentType: file.type };
+  return { contentType: resolveProfileImageContentType(file) };
 };
 
 export const deleteProfileImageByUrl = async (
@@ -95,7 +115,17 @@ export const uploadProfileImage = async ({
     });
 
   if (uploadError) {
-    throw new Error("프로필 이미지 업로드에 실패했습니다.");
+    console.error("[uploadProfileImage]", uploadError.message);
+
+    if (uploadError.message.toLowerCase().includes("bucket not found")) {
+      throw new Error(
+        "프로필 이미지 저장소(profile-images)가 없습니다. Supabase에서 06-storage.sql을 실행해 주세요.",
+      );
+    }
+
+    throw new Error(
+      `프로필 이미지 업로드에 실패했습니다. (${uploadError.message})`,
+    );
   }
 
   if (previousImageUrl) {

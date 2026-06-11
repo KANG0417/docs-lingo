@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { translateDocumentFromUrl } from "@/services/translation-client-service";
+import {
+  translateDocumentFromText,
+  translateDocumentFromUrl,
+} from "@/services/translation-client-service";
 import type { DocInputMode } from "@/types/document";
 import type { DocumentTranslationResult } from "@/types/translation";
 
@@ -12,7 +15,7 @@ interface UseDocumentReaderReturn {
   errorMessage: string | null;
   changeMode: (mode: DocInputMode) => void;
   readFromUrl: (url: string) => Promise<void>;
-  readFromText: (text: string) => void;
+  readFromText: (text: string) => Promise<void>;
   selectHistoryItem: (item: DocumentTranslationResult) => void;
 }
 
@@ -47,18 +50,23 @@ export const useDocumentReader = (): UseDocumentReaderReturn => {
     }
   };
 
-  const readFromText = (text: string): void => {
+  const readFromText = async (text: string): Promise<void> => {
+    setIsLoading(true);
     setErrorMessage(null);
-    setTranslationResult({
-      id: "local-text",
-      documentId: "local-text",
-      title: "직접 입력한 텍스트",
-      url: null,
-      originalContent: text.trim(),
-      translatedContent: text.trim(),
-      summaryTerms: [],
-      createdAt: new Date().toISOString(),
-    });
+    setTranslationResult(null);
+
+    try {
+      const result = await translateDocumentFromText(text);
+      setTranslationResult(result);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "텍스트 번역 중 오류가 발생했습니다.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const selectHistoryItem = (item: DocumentTranslationResult): void => {

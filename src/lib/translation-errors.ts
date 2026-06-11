@@ -21,7 +21,7 @@ interface TranslationErrorContext {
   statusCode?: number;
 }
 
-const PROFILE_GUIDE = "개인정보 변경 메뉴의 AI 도구 설정";
+const GEMINI_KEY_GUIDE = ".env.local의 GEMINI_API_KEY";
 
 export class TranslationError extends Error {
   public readonly code: TranslationErrorCode;
@@ -84,7 +84,7 @@ const createGeminiNoApiKeyError = (
 ): TranslationError => {
   return new TranslationError(
     "GEMINI_NO_API_KEY",
-    `AI API 키가 등록되지 않았습니다.\n${PROFILE_GUIDE}에서 Google Gemini API 키를 입력해 주세요.`,
+    `AI API 키가 등록되지 않았습니다.\n${GEMINI_KEY_GUIDE}에 Google Gemini API 키를 설정해 주세요.`,
     originalMessage,
   );
 };
@@ -97,7 +97,7 @@ const createGeminiInvalidApiKeyError = (
     "GEMINI_INVALID_API_KEY",
     hasUserApiKey
       ? "등록한 AI API 키가 올바르지 않습니다.\nGoogle AI Studio에서 발급한 키인지 확인해 주세요."
-      : `서버 AI API 키가 올바르지 않습니다.\n${PROFILE_GUIDE}에서 본인 API 키를 등록해 주세요.`,
+      : `서버 AI API 키가 올바르지 않습니다.\n${GEMINI_KEY_GUIDE} 값을 확인해 주세요.`,
     originalMessage,
   );
 };
@@ -110,7 +110,7 @@ const createGeminiBillingDepletedError = (
     "GEMINI_BILLING_DEPLETED",
     hasUserApiKey
       ? "등록한 AI API 키의 크레딧이 모두 소진되었습니다.\nGoogle AI Studio에서 결제 상태를 확인하거나 다른 API 키를 등록해 주세요."
-      : `AI 번역 크레딧이 모두 소진되었습니다.\n${PROFILE_GUIDE}에서 본인 Google Gemini API 키를 등록해 주세요.`,
+      : `AI 번역 크레딧이 모두 소진되었습니다.\n${GEMINI_KEY_GUIDE}에 유효한 Google Gemini API 키를 설정해 주세요.`,
     originalMessage,
   );
 };
@@ -123,7 +123,7 @@ const createGeminiQuotaError = (
     "GEMINI_QUOTA_EXCEEDED",
     hasUserApiKey
       ? "AI 사용 한도를 초과했습니다.\n잠시 후 다시 시도하거나 다른 모델명을 사용해 보세요."
-      : `AI 사용 한도를 초과했습니다.\n${PROFILE_GUIDE}에서 본인 API 키를 등록해 주세요.`,
+      : `AI 사용 한도를 초과했습니다.\n${GEMINI_KEY_GUIDE}에 설정된 API 키 한도를 확인해 주세요.`,
     originalMessage,
   );
 };
@@ -213,7 +213,7 @@ export const normalizeFallbackError = (
   ) {
     return new TranslationError(
       "FALLBACK_QUOTA_EXCEEDED",
-      `무료 대체 번역 한도가 초과되었습니다.\n${PROFILE_GUIDE}에서 Google Gemini API 키를 등록해 주세요.`,
+      `무료 대체 번역 한도가 초과되었습니다.\n${GEMINI_KEY_GUIDE}에 Google Gemini API 키를 설정해 주세요.`,
       originalMessage,
     );
   }
@@ -244,7 +244,7 @@ export const normalizeFallbackError = (
 
   return new TranslationError(
     "FALLBACK_UNKNOWN",
-    `번역에 실패했습니다.\n${PROFILE_GUIDE}에서 Google Gemini API 키를 등록해 보세요.`,
+    `번역에 실패했습니다.\n${GEMINI_KEY_GUIDE}에 Google Gemini API 키가 설정되어 있는지 확인해 보세요.`,
     originalMessage,
   );
 };

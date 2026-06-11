@@ -1,4 +1,5 @@
 import { extractWithReadability } from "@/lib/document-pipeline/extract-readability";
+import { extractLinkedSectionHeadings } from "@/lib/document-pipeline/extract-linked-section-headings";
 import { fetchHtmlDocument } from "@/lib/document-pipeline/fetch-html";
 import { filterImportantParagraphs } from "@/lib/document-pipeline/filter-importance";
 import {
@@ -26,7 +27,11 @@ export const refineDocumentFromUrl = async (
     );
   }
 
-  const rawParagraphs = splitParagraphs(extractedDocument.textContent);
+  const linkedSectionHeadings = extractLinkedSectionHeadings(fetchedDocument.html);
+  const rawParagraphs = splitParagraphs(
+    extractedDocument.textContent,
+    linkedSectionHeadings,
+  );
   const filteredParagraphs = filterImportantParagraphs(rawParagraphs);
 
   if (filteredParagraphs.length === 0) {
