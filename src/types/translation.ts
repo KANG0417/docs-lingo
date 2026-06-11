@@ -25,3 +25,18 @@ export interface DocumentTranslationResult {
   summaryTerms: KeywordTerm[];
   createdAt: string;
 }
+
+export interface TranslationHistoryQuery {
+  dateKey?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TranslationHistoryResponse {
+  items: TranslationHistoryItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  dateKey: string;
+}

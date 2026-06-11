@@ -1,7 +1,12 @@
+"use client";
+
+import clsx from "clsx";
 import Link from "next/link";
 import type { ReactElement } from "react";
 import { BrandLogo } from "@/components/atoms/logo/brand-logo";
 import { UserMenu } from "@/components/molecules/menu/user-menu";
+import { NAVBAR_SCROLL_THRESHOLD } from "@/constants/scroll";
+import { useWindowScroll } from "@/hooks/use-window-scroll";
 
 interface NavbarProps {
   nickname: string;
@@ -9,8 +14,18 @@ interface NavbarProps {
 }
 
 export const Navbar = ({ nickname, image }: NavbarProps): ReactElement => {
+  const { isPastThreshold } = useWindowScroll({
+    threshold: NAVBAR_SCROLL_THRESHOLD,
+  });
+
   return (
-    <header className="sticky top-0 z-10">
+    <header
+      className={clsx(
+        "sticky top-0 z-10 transition-[background-color,box-shadow,border-color] duration-200",
+        isPastThreshold &&
+          "border-b border-white/10 bg-[#0a1030]/95 shadow-[0_4px_20px_rgba(0,0,0,0.25)] backdrop-blur-md",
+      )}
+    >
       <div className="mx-auto flex h-24 w-full max-w-6xl items-center justify-between px-9">
         <Link href="/main" aria-label="독스링고 메인으로 이동">
           <BrandLogo />

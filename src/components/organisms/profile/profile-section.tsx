@@ -203,10 +203,10 @@ export const ProfileSection = ({
       className="flex w-full flex-col items-center gap-8"
     >
       <header className="flex flex-col gap-0.5 text-center">
-        <h1 className="text-[2.375rem] font-extrabold tracking-tight text-white">
+        <h1 className="font-doc-title text-[2.375rem] font-extrabold tracking-tight text-white">
           개인정보 변경
         </h1>
-        <p className="text-[1.375rem] text-indigo-200/70">
+        <p className="font-doc-aux text-[1.375rem] text-indigo-200/70">
           닉네임과 프로필 이미지를 수정할 수 있습니다.
         </p>
       </header>
@@ -232,7 +232,7 @@ export const ProfileSection = ({
           </div>
 
           <div className="flex flex-col gap-5">
-            <label className="flex flex-col gap-2">
+            <label className="font-doc-nickname flex flex-col gap-2">
               <span className="text-sm font-semibold text-amber-900">
                 닉네임
               </span>
@@ -276,7 +276,7 @@ export const ProfileSection = ({
             <button
               type="submit"
               disabled={isBusy}
-              className="profile-save-btn flex h-11 w-fit items-center justify-center rounded-[6.5px] px-8 text-sm font-semibold text-indigo-100"
+              className="profile-save-btn flex h-11 w-fit items-center justify-center rounded-full px-8 text-sm font-semibold text-indigo-100"
             >
               <span className="relative z-10">
                 {isSaving || isUploadingImage ? "저장 중..." : "변경사항 저장"}
@@ -284,7 +284,7 @@ export const ProfileSection = ({
             </button>
           </div>
 
-          <p className="mt-3 text-center text-sm font-semibold text-amber-800">
+          <p className="font-doc-aux mt-3 text-center text-sm font-semibold text-amber-800">
             {isUploadingImage
               ? "이미지 저장 중..."
               : hasPendingImage
@@ -295,7 +295,7 @@ export const ProfileSection = ({
           {profileSuccessMessage && (
             <p
               role="status"
-              className="mt-2 text-center text-sm font-semibold text-emerald-700"
+              className="font-doc-aux mt-2 text-center text-sm font-semibold text-emerald-700"
             >
               {profileSuccessMessage}
             </p>
@@ -304,7 +304,7 @@ export const ProfileSection = ({
           {infoMessage && (
             <p
               role="status"
-              className="mt-2 text-center text-sm font-semibold text-amber-700"
+              className="font-doc-aux mt-2 text-center text-sm font-semibold text-amber-700"
             >
               {infoMessage}
             </p>
@@ -313,7 +313,7 @@ export const ProfileSection = ({
           {(nicknameError || imageSelectError || profileErrorMessage) && (
             <p
               role="alert"
-              className="mt-2 text-center text-sm font-semibold text-red-600"
+              className="font-doc-aux mt-2 text-center text-sm font-semibold text-red-600"
             >
               {nicknameError ?? imageSelectError ?? profileErrorMessage}
             </p>
@@ -333,7 +333,7 @@ export const ProfileSection = ({
           {withdrawalSuccessMessage && (
             <p
               role="status"
-              className="mt-3 text-sm font-semibold text-emerald-700"
+              className="font-doc-aux mt-3 text-sm font-semibold text-emerald-700"
             >
               {withdrawalSuccessMessage}
             </p>
@@ -342,20 +342,20 @@ export const ProfileSection = ({
           {withdrawalErrorMessage && (
             <p
               role="alert"
-              className="mt-3 text-sm font-semibold text-red-600"
+              className="font-doc-aux mt-3 text-sm font-semibold text-red-600"
             >
               {withdrawalErrorMessage}
             </p>
           )}
 
-          <p className="mt-2 text-sm font-bold leading-relaxed text-red-700">
+          <p className="font-doc-aux mt-2 text-sm font-bold leading-relaxed text-red-700">
             탈퇴 시 프로필, 북마크, 번역 히스토리가 모두 삭제되며 복구할 수
             없습니다.
           </p>
 
           {hasScheduledWithdrawal ? (
             <div className="mt-5 flex flex-col items-center gap-4">
-              <p className="text-sm font-semibold leading-relaxed text-red-700">
+              <p className="font-doc-aux text-sm font-semibold leading-relaxed text-red-700">
                 탈퇴가 예약되었습니다. 24시간 이내 취소하지 않으면 아래 시각에
                 탈퇴가 완료됩니다.
               </p>
@@ -383,7 +383,7 @@ export const ProfileSection = ({
               type="button"
               onClick={handleWithdrawClick}
               disabled={isBusy}
-              className="profile-withdraw-btn mt-5 inline-flex h-11 w-fit items-center justify-center rounded-[6.5px] px-6 text-sm font-semibold text-white"
+              className="profile-withdraw-btn mt-5 inline-flex h-11 w-fit items-center justify-center rounded-full px-6 text-sm font-semibold text-white"
             >
               <span className="relative z-10">탈퇴 하기</span>
             </button>

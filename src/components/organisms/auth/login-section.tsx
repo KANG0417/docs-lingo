@@ -17,7 +17,7 @@ export const LoginSection = (): ReactElement => {
         <h2 className="text-2xl font-bold tracking-tight text-zinc-900">
           로그인
         </h2>
-        <p className="text-sm leading-relaxed text-zinc-500">
+        <p className="font-doc-aux text-sm leading-relaxed text-zinc-500">
           SNS 계정으로 간편하게 시작하세요.
         </p>
       </header>

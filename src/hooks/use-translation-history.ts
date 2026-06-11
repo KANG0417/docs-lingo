@@ -2,19 +2,27 @@
 
 import { useCallback, useState } from "react";
 import { getTranslationHistory } from "@/services/translation-client-service";
-import type { TranslationHistoryItem } from "@/types/translation";
+import { getTranslationDayRange } from "@/lib/translation-day-range";
+import type { TranslationHistoryResponse } from "@/types/translation";
 
 interface UseTranslationHistoryReturn {
-  historyItems: TranslationHistoryItem[];
+  historyResponse: TranslationHistoryResponse | null;
+  selectedDateKey: string;
+  currentPage: number;
   isLoading: boolean;
   errorMessage: string | null;
+  setSelectedDateKey: (dateKey: string) => void;
+  setCurrentPage: (page: number) => void;
   refreshHistory: () => Promise<void>;
 }
 
 export const useTranslationHistory = (): UseTranslationHistoryReturn => {
-  const [historyItems, setHistoryItems] = useState<TranslationHistoryItem[]>(
-    [],
+  const [selectedDateKey, setSelectedDateKey] = useState<string>(
+    getTranslationDayRange().dateKey,
   );
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [historyResponse, setHistoryResponse] =
+    useState<TranslationHistoryResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -23,9 +31,13 @@ export const useTranslationHistory = (): UseTranslationHistoryReturn => {
     setErrorMessage(null);
 
     try {
-      const history = await getTranslationHistory();
-      setHistoryItems(history);
+      const history = await getTranslationHistory({
+        dateKey: selectedDateKey,
+        page: currentPage,
+      });
+      setHistoryResponse(history);
     } catch (error) {
+      setHistoryResponse(null);
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -34,12 +46,21 @@ export const useTranslationHistory = (): UseTranslationHistoryReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentPage, selectedDateKey]);
+
+  const handleSetSelectedDateKey = (dateKey: string): void => {
+    setSelectedDateKey(dateKey);
+    setCurrentPage(1);
+  };
 
   return {
-    historyItems,
+    historyResponse,
+    selectedDateKey,
+    currentPage,
     isLoading,
     errorMessage,
+    setSelectedDateKey: handleSetSelectedDateKey,
+    setCurrentPage,
     refreshHistory,
   };
 };

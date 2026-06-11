@@ -1,4 +1,4 @@
-export const DEFAULT_PROFILE_IMAGE = "/images/public_user_icon.png";
+export const DEFAULT_PROFILE_IMAGE = "/images/user/public_user_icon.png";
 
 export const resolveProfileImage = (
   image: string | null | undefined,

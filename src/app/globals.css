@@ -12,6 +12,34 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* 타이틀 · 보조텍스트 · 버튼 — Establish Retrosans */
+.font-doc-title,
+.font-doc-aux {
+  font-family: var(--font-doc-title), var(--font-sans), sans-serif;
+}
+
+/* 문서 본문 — 116watermelon */
+.font-doc-body {
+  font-family: var(--font-doc-body), var(--font-sans), sans-serif;
+}
+
+/* 닉네임 입력 영역 — 116watermelon */
+.font-doc-nickname,
+.font-doc-nickname input,
+.font-doc-nickname input::placeholder {
+  font-family: var(--font-doc-body), var(--font-sans), sans-serif;
+}
+
+/* 팝업 · 모달 — 116watermelon */
+.font-doc-popup,
+.font-doc-popup button,
+.font-doc-popup input,
+.font-doc-popup input::placeholder,
+.font-doc-popup a,
+.font-doc-popup time {
+  font-family: var(--font-doc-body), var(--font-sans), sans-serif;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -29,6 +57,12 @@ body {
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+    font-family: var(--font-doc-title), var(--font-sans), sans-serif;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    font-family: var(--font-doc-title), var(--font-sans), sans-serif;
   }
 }
 
@@ -104,9 +138,26 @@ body {
   color: #312e81;
 }
 
-/* 번역 결과 본문 */
+/* 번역 결과 — Binggrae2 본문 · Binggrae2 Bold 타이틀·강조 */
+.font-doc-translation {
+  font-family: var(--font-doc-translation), var(--font-sans), sans-serif;
+}
+
+.font-doc-translation-bold {
+  font-family: var(--font-doc-translation-bold), var(--font-sans), sans-serif;
+}
+
 .translation-content {
+  font-family: var(--font-doc-translation), var(--font-sans), sans-serif;
   font-size: 1.0625rem;
+}
+
+.translation-result .section-label,
+.translation-result .emphasis-underline,
+.translation-content .section-label,
+.translation-content .emphasis-underline,
+.translation-content .paragraph-highlighter {
+  font-family: var(--font-doc-translation-bold), var(--font-sans), sans-serif;
 }
 
 .translation-paragraph {
@@ -163,7 +214,7 @@ body {
   isolation: isolate;
   overflow: hidden;
   border: 1px solid rgba(199, 210, 254, 0.35);
-  border-radius: 6.5px;
+  border-radius: 9999px;
   background-color: #0a1030;
   transition:
     transform 0.15s ease,
@@ -176,7 +227,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 6.5px;
+  border-radius: 9999px;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -229,7 +280,6 @@ body {
 }
 
 .profile-save-btn:disabled {
-  cursor: not-allowed;
   background-color: rgba(10, 16, 48, 0.4);
 }
 
@@ -276,7 +326,7 @@ body {
   isolation: isolate;
   overflow: hidden;
   border: 1px solid rgba(252, 165, 165, 0.55);
-  border-radius: 6.5px;
+  border-radius: 9999px;
   background-color: #dc2626;
   transition:
     transform 0.15s ease,
@@ -289,7 +339,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: 6.5px;
+  border-radius: 9999px;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -335,7 +385,6 @@ body {
 }
 
 .profile-withdraw-btn:disabled {
-  cursor: not-allowed;
   background-color: rgba(220, 38, 38, 0.45);
   border-color: rgba(252, 165, 165, 0.3);
 }
@@ -364,6 +413,323 @@ body {
   }
 }
 
+/* 비활성 요소 — 금지 포인터 대신 기본 커서 */
+button:disabled,
+[role="button"]:disabled,
+[role="button"][aria-disabled="true"],
+input:disabled,
+textarea:disabled,
+select:disabled {
+  cursor: default;
+}
+
+/* 번역 히스토리 캘린더 — react-day-picker 커스텀 */
+.history-day-picker .rdp-root {
+  --rdp-accent-color: #0a1030;
+  --rdp-accent-background-color: rgba(228, 228, 231, 0.65);
+  --rdp-day-height: 2.125rem;
+  --rdp-day-width: 2.125rem;
+  --rdp-day_button-height: 1.5rem;
+  --rdp-day_button-width: 1.5rem;
+  --rdp-day_button-border-radius: 9999px;
+  --rdp-nav_button-height: 1.75rem;
+  --rdp-nav_button-width: 1.75rem;
+  --rdp-nav-height: 2rem;
+  --rdp-today-color: #312e81;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+.history-day-picker .rdp-month_grid {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0.1rem;
+}
+
+.history-day-picker .rdp-weekday,
+.history-day-picker .rdp-day {
+  width: 14.2857%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  padding: 0.1rem;
+  box-sizing: border-box;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.history-day-picker .rdp-selected {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+/* 일요일 빨강 · 토요일 진한 갈색 */
+.history-day-picker .rdp-weekday:nth-child(1) {
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.history-day-picker .rdp-weekday:nth-child(7) {
+  font-weight: 600;
+  color: #78350f;
+}
+
+.history-day-picker
+  .history-day-picker-sunday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .rdp-day_button,
+.history-day-picker
+  .history-day-picker-sunday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .history-day-picker-day,
+.history-day-picker
+  .history-day-picker-holiday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .rdp-day_button,
+.history-day-picker
+  .history-day-picker-holiday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .history-day-picker-day {
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.history-day-picker
+  .history-day-picker-saturday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .rdp-day_button,
+.history-day-picker
+  .history-day-picker-saturday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .history-day-picker-day {
+  font-weight: 600;
+  color: #78350f;
+}
+
+.history-calendar-month-body {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.history-calendar-grid-wrap {
+  min-width: 0;
+  flex: 1;
+}
+
+.history-day-picker-side-nav {
+  display: inline-flex;
+  height: 1.75rem;
+  width: 1.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px dashed rgba(217, 119, 6, 0.45);
+  background-color: rgba(255, 255, 255, 0.9);
+  font-family: var(--font-doc-title), var(--font-sans), sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #92400e;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.history-day-picker-side-nav:not(:disabled):hover {
+  background-color: rgba(254, 243, 199, 0.9);
+  transform: translateY(-1px);
+}
+
+.history-day-picker-side-nav-disabled,
+.history-day-picker-side-nav:disabled {
+  cursor: default;
+  border-style: solid;
+  border-color: rgba(217, 119, 6, 0.18);
+  background-color: rgba(254, 243, 199, 0.35);
+  color: rgba(146, 64, 14, 0.35);
+  opacity: 1;
+  transform: none;
+  box-shadow: none;
+}
+
+.history-day-picker .rdp-day_button,
+.history-day-picker-day {
+  position: relative;
+  z-index: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  min-width: 1.375rem;
+  min-height: 1.375rem;
+  max-width: 1.375rem;
+  max-height: 1.375rem;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  margin: 0;
+  flex: 0 0 auto;
+  overflow: visible;
+  font-family: var(--font-doc-translation), var(--font-sans), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  color: #3f3f46;
+  background-color: transparent;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  box-sizing: border-box;
+  transform: scale(1);
+  transform-origin: center center;
+  transition: color 0.28s ease-out;
+}
+
+.history-day-picker .rdp-day_button::before,
+.history-day-picker-day::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: transparent;
+  transform: translate(-50%, -50%) scale(0.7);
+  transform-origin: center center;
+  transition:
+    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 0.28s ease-out;
+}
+
+.history-day-picker
+  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled)
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover,
+.history-day-picker
+  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled)
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover {
+  color: #171717;
+  border-color: transparent;
+}
+
+.history-day-picker
+  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled)
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover::before,
+.history-day-picker
+  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled)
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover::before {
+  background-color: #d4d4d8;
+  transform: translate(-50%, -50%) scale(1.12);
+}
+
+.history-day-picker-selected .rdp-day_button,
+.history-day-picker-selected .history-day-picker-day {
+  font-family: var(--font-doc-translation-bold), var(--font-sans), sans-serif;
+  font-weight: 700;
+  background-color: #0a1030;
+  color: #eef2ff;
+  border: 2px solid #0a1030;
+  transform: scale(1);
+}
+
+.history-day-picker-selected .rdp-day_button::before,
+.history-day-picker-selected .history-day-picker-day::before {
+  content: none;
+}
+
+.history-day-picker-selected .rdp-day_button:hover,
+.history-day-picker-selected .history-day-picker-day:hover {
+  transform: scale(1);
+  background-color: #0a1030;
+  color: #eef2ff;
+  border-color: #0a1030;
+}
+
+.history-day-picker-today:not(.history-day-picker-selected):not(
+    .history-day-picker-sunday
+  ):not(.history-day-picker-saturday):not(.history-day-picker-holiday)
+  .rdp-day_button,
+.history-day-picker-today:not(.history-day-picker-selected):not(
+    .history-day-picker-sunday
+  ):not(.history-day-picker-saturday):not(.history-day-picker-holiday)
+  .history-day-picker-day {
+  border-color: rgba(49, 46, 129, 0.45);
+  color: #312e81;
+  transition:
+    color 0.28s ease-out,
+    border-color 0.28s ease-out;
+}
+
+.history-day-picker-today.history-day-picker-sunday:not(
+    .history-day-picker-selected
+  )
+  .rdp-day_button,
+.history-day-picker-today.history-day-picker-sunday:not(
+    .history-day-picker-selected
+  )
+  .history-day-picker-day,
+.history-day-picker-today.history-day-picker-holiday:not(
+    .history-day-picker-selected
+  )
+  .rdp-day_button,
+.history-day-picker-today.history-day-picker-holiday:not(
+    .history-day-picker-selected
+  )
+  .history-day-picker-day {
+  border-color: rgba(220, 38, 38, 0.45);
+  color: #dc2626;
+}
+
+.history-day-picker-today.history-day-picker-saturday:not(
+    .history-day-picker-selected
+  )
+  .rdp-day_button,
+.history-day-picker-today.history-day-picker-saturday:not(
+    .history-day-picker-selected
+  )
+  .history-day-picker-day {
+  border-color: rgba(120, 53, 15, 0.45);
+  color: #78350f;
+}
+
+.history-day-picker-today:not(.history-day-picker-selected)
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover,
+.history-day-picker-today:not(.history-day-picker-selected)
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover {
+  color: #171717;
+  border-color: transparent;
+}
+
+.history-day-picker-disabled .rdp-day_button,
+.history-day-picker-disabled .history-day-picker-day {
+  opacity: 0.35;
+}
+
+.history-day-picker-disabled .rdp-day_button:hover,
+.history-day-picker-disabled .history-day-picker-day:hover {
+  color: #3f3f46;
+}
+
+.history-day-picker-disabled .rdp-day_button:hover::before,
+.history-day-picker-disabled .history-day-picker-day:hover::before {
+  background-color: transparent;
+  transform: translate(-50%, -50%) scale(0.7);
+}
+
+.history-day-picker-outside .history-day-picker-day {
+  opacity: 0.25;
+}
+
 /* 메모장 줄무늬 */
 .memo-lines {
   background-image: repeating-linear-gradient(
@@ -372,4 +738,101 @@ body {
     rgba(120, 90, 20, 0.16) 1.875rem,
     rgba(120, 90, 20, 0.16) 1.9375rem
   );
+}
+
+/* 번역 히스토리 — 메모지 패널 */
+.history-memo-panel {
+  background-color: #fffbeb;
+}
+
+.history-memo-header {
+  background-color: rgba(255, 251, 235, 0.97);
+}
+
+.history-memo-margin {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.history-memo-margin::before {
+  content: "";
+  position: absolute;
+  left: 0.875rem;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(239, 68, 68, 0.28);
+}
+
+.history-memo-list {
+  min-height: 12rem;
+}
+
+.history-memo-item {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 1.9375rem;
+  padding: 0 0.75rem 0 0;
+  text-align: left;
+  transition: background-color 0.15s ease;
+}
+
+.history-memo-item:hover {
+  background-color: rgba(254, 243, 199, 0.5);
+}
+
+.history-memo-item-selected {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 245, 130, 0) 0%,
+    rgba(255, 245, 130, 0.82) 20%,
+    rgba(255, 245, 130, 0.82) 80%,
+    rgba(255, 245, 130, 0) 100%
+  );
+}
+
+.history-memo-item-selected:hover {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 245, 130, 0) 0%,
+    rgba(255, 245, 130, 0.92) 20%,
+    rgba(255, 245, 130, 0.92) 80%,
+    rgba(255, 245, 130, 0) 100%
+  );
+}
+
+.history-memo-calendar {
+  border-style: dashed;
+  border-color: rgba(217, 119, 6, 0.45);
+  background-color: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.history-memo-pagination {
+  background-color: rgba(254, 243, 199, 0.45);
+}
+
+.history-memo-pagination-btn {
+  border: 1px dashed rgba(217, 119, 6, 0.45);
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 0.375rem 0.75rem;
+  font-family: var(--font-doc-title), var(--font-sans), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.history-memo-pagination-btn:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
+}
+
+.history-memo-pagination-btn:disabled {
+  opacity: 0.4;
 }

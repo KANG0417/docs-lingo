@@ -13,7 +13,7 @@ export const KeywordSummary = ({
 
   if (normalizedTerms.length === 0) {
     return (
-      <p className="text-sm text-amber-700/70">
+      <p className="font-doc-aux text-sm text-amber-700/70">
         추출된 핵심 키워드가 없습니다.
       </p>
     );
@@ -24,7 +24,7 @@ export const KeywordSummary = ({
       {normalizedTerms.map((item) => (
         <li
           key={item.term}
-          className="rounded-md border border-dashed border-amber-300 bg-white/70 px-4 py-3 text-sm leading-relaxed text-zinc-800"
+          className="font-doc-translation rounded-md border border-dashed border-amber-300 bg-white/70 px-4 py-3 text-sm leading-relaxed text-zinc-800"
         >
           {item.isCoreKeyword ? (
             <code className="keyword-chip">{item.term}</code>

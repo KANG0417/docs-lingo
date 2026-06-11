@@ -1,7 +1,12 @@
 import { processRefinedDocument } from "@/lib/document-ai-processor";
 import { refineDocumentFromText } from "@/lib/document-pipeline/refine-document-from-text";
 import { refineDocumentFromUrl } from "@/lib/document-pipeline/refine-document";
+import { isPaginationDocumentUrl } from "@/lib/normalize-document-url";
 import { getTranslationDayRange } from "@/lib/translation-day-range";
+import {
+  isValidHistoryDateKey,
+} from "@/lib/translation-history-date";
+import { HISTORY_PAGE_SIZE } from "@/constants/translation-history";
 import {
   TranslationError,
   toTranslationError,
@@ -13,6 +18,8 @@ import type {
   DocumentTranslationResult,
   KeywordTerm,
   TranslationHistoryItem,
+  TranslationHistoryQuery,
+  TranslationHistoryResponse,
 } from "@/types/translation";
 
 interface SaveTranslationParams {
@@ -204,6 +211,19 @@ const translateRefinedDocument = async (
 
   const { translatedContent, summaryTerms } = processedDocument;
 
+  if (isPaginationDocumentUrl(refinedDocument.url)) {
+    return {
+      id: "local-pagination",
+      documentId: "local-pagination",
+      title: refinedDocument.title,
+      url: refinedDocument.url,
+      originalContent: refinedDocument.originalContent,
+      translatedContent,
+      summaryTerms,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
   return saveTranslation({
     userId,
     url: refinedDocument.url,
@@ -264,57 +284,127 @@ const isMissingHistoryColumnError = (message: string): boolean => {
   );
 };
 
-export const getTranslationHistory = async (
+const fetchHistoryRows = async (
   userId: string,
-): Promise<TranslationHistoryItem[]> => {
+  selectClause: string,
+  dateKey: string,
+  page: number,
+  pageSize: number,
+): Promise<{ rows: TranslationRow[]; totalCount: number }> => {
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
     throw new Error("Supabase 연결이 설정되지 않았습니다.");
   }
 
-  const fullQuery = await supabase
-    .from("translations")
-    .select(HISTORY_SELECT_FULL)
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
-    .limit(20);
+  const { startIso, endIso } = getTranslationDayRange(
+    new Date(`${dateKey}T12:00:00+09:00`),
+  );
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
 
-  if (!fullQuery.error && fullQuery.data) {
-    return (fullQuery.data as unknown as TranslationRow[]).map(mapHistoryItem);
+  const countQuery = await supabase
+    .from("translations")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", startIso)
+    .lte("created_at", endIso);
+
+  if (countQuery.error) {
+    throw new Error(countQuery.error.message);
   }
 
-  if (
-    fullQuery.error &&
-    isMissingHistoryColumnError(fullQuery.error.message)
-  ) {
-    const legacyQuery = await supabase
-      .from("translations")
-      .select(HISTORY_SELECT_LEGACY)
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(20);
+  const dataQuery = await supabase
+    .from("translations")
+    .select(selectClause)
+    .eq("user_id", userId)
+    .gte("created_at", startIso)
+    .lte("created_at", endIso)
+    .order("created_at", { ascending: false })
+    .range(from, to);
 
-    if (!legacyQuery.error && legacyQuery.data) {
-      return (legacyQuery.data as unknown as TranslationRow[]).map(
-        (row) =>
-          mapHistoryItem({
-            ...row,
-            original_content: null,
-            summary_terms: [],
-          } as TranslationRow),
-      );
+  if (dataQuery.error) {
+    throw new Error(dataQuery.error.message);
+  }
+
+  return {
+    rows: (dataQuery.data ?? []) as unknown as TranslationRow[],
+    totalCount: countQuery.count ?? 0,
+  };
+};
+
+export const getTranslationHistory = async (
+  userId: string,
+  query: TranslationHistoryQuery = {},
+): Promise<TranslationHistoryResponse> => {
+  const page = Math.max(1, query.page ?? 1);
+  const pageSize = Math.max(1, query.pageSize ?? HISTORY_PAGE_SIZE);
+  const dateKey =
+    query.dateKey && isValidHistoryDateKey(query.dateKey)
+      ? query.dateKey
+      : getTranslationDayRange().dateKey;
+
+  try {
+    const fullResult = await fetchHistoryRows(
+      userId,
+      HISTORY_SELECT_FULL,
+      dateKey,
+      page,
+      pageSize,
+    );
+
+    const totalPages = Math.max(1, Math.ceil(fullResult.totalCount / pageSize));
+
+    return {
+      items: fullResult.rows.map(mapHistoryItem),
+      totalCount: fullResult.totalCount,
+      page,
+      pageSize,
+      totalPages,
+      dateKey,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+
+    if (!isMissingHistoryColumnError(message)) {
+      console.error("[getTranslationHistory]", message);
+      throw new Error(message || "번역 히스토리를 불러오지 못했습니다.");
     }
+  }
+
+  try {
+    const legacyResult = await fetchHistoryRows(
+      userId,
+      HISTORY_SELECT_LEGACY,
+      dateKey,
+      page,
+      pageSize,
+    );
+
+    const totalPages = Math.max(1, Math.ceil(legacyResult.totalCount / pageSize));
+
+    return {
+      items: legacyResult.rows.map((row) =>
+        mapHistoryItem({
+          ...row,
+          original_content: null,
+          summary_terms: [],
+        } as TranslationRow),
+      ),
+      totalCount: legacyResult.totalCount,
+      page,
+      pageSize,
+      totalPages,
+      dateKey,
+    };
+  } catch (legacyError) {
+    const legacyMessage =
+      legacyError instanceof Error ? legacyError.message : "";
 
     throw new Error(
-      "번역 히스토리 테이블 마이그레이션이 필요합니다.\nSupabase SQL Editor에서 supabase/migrations/20260610-translations-history.sql 을 실행해 주세요.",
+      legacyMessage ||
+        "번역 히스토리 테이블 마이그레이션이 필요합니다.\nSupabase SQL Editor에서 supabase/migrations/20260610-translations-history.sql 을 실행해 주세요.",
     );
   }
-
-  console.error("[getTranslationHistory]", fullQuery.error?.message);
-
-  throw new Error(
-    fullQuery.error?.message ?? "번역 히스토리를 불러오지 못했습니다.",
-  );
 };
 
 export const getTranslationById = async (

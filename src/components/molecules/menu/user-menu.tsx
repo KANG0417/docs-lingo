@@ -48,13 +48,15 @@ export const UserMenu = ({ nickname, image }: UserMenuProps): ReactElement => {
         className="flex items-center gap-3.5 rounded-full py-2 pl-2 pr-6 transition-colors hover:bg-white/10"
       >
         <UserAvatar nickname={nickname} image={image} size="sm" />
-        <span className="text-xl font-semibold text-indigo-100">{nickname}</span>
+        <span className="font-doc-body text-xl font-semibold text-indigo-100">
+          {nickname}
+        </span>
       </button>
 
       {isOpen && (
         <nav
           role="menu"
-          className="absolute right-0 top-full z-20 mt-2 w-52 -rotate-1 rounded-sm border border-amber-200 bg-amber-50 shadow-[2px_4px_12px_rgba(120,90,20,0.18)]"
+          className="font-doc-popup absolute right-0 top-full z-20 mt-2 w-52 -rotate-1 rounded-sm border border-amber-200 bg-amber-50 shadow-[2px_4px_12px_rgba(120,90,20,0.18)]"
         >
           {/* 메모지 상단 테이프 */}
           <span

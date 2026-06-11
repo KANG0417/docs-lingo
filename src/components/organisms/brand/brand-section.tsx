@@ -17,7 +17,7 @@ export const BrandSection = (): ReactElement => {
               pauseAfterTypedMs={3600}
             />
           </h1>
-          <p className="max-w-md text-lg leading-relaxed text-indigo-200/80">
+          <p className="font-doc-aux max-w-md text-lg leading-relaxed text-indigo-200/80">
             문서와 언어를 잇다.
             <br />
             가장 빠르고 정확한 문서 번역 경험을 시작하세요.

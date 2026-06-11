@@ -81,7 +81,7 @@ export const WithdrawConfirmModal = ({
           aria-modal="true"
           aria-labelledby="withdraw-modal-title"
           aria-describedby="withdraw-modal-description"
-          className="memo-lines rounded-sm bg-amber-50 p-8 shadow-[4px_8px_24px_rgba(0,0,0,0.4)]"
+          className="font-doc-popup memo-lines rounded-sm bg-amber-50 p-8 shadow-[4px_8px_24px_rgba(0,0,0,0.4)]"
           onClick={handleDialogClick}
         >
           <h2

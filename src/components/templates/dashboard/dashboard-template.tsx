@@ -1,4 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
+import { ScrollToTopButton } from "@/components/atoms/button/scroll-to-top-button";
 
 interface DashboardTemplateProps {
   navbarSlot: ReactNode;
@@ -12,9 +13,10 @@ export const DashboardTemplate = ({
   return (
     <div className="space-bg flex min-h-dvh flex-col">
       {navbarSlot}
-      <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-10">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-6 py-10">
         {children}
       </main>
+      <ScrollToTopButton />
     </div>
   );
 };

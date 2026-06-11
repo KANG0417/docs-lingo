@@ -39,10 +39,10 @@ export const HistoryAlbumCard = ({
       }`}
     >
       <div className="flex aspect-[4/3] flex-col justify-between bg-gradient-to-br from-[#0a1030] via-[#141c4a] to-[#312e81] p-4">
-        <span className="line-clamp-3 text-sm font-bold leading-snug text-indigo-50">
+        <span className="font-doc-title line-clamp-3 text-sm font-bold leading-snug text-indigo-50">
           {item.title}
         </span>
-        <span className="text-xs font-medium text-indigo-200/80">
+        <span className="font-doc-aux text-xs font-medium text-indigo-200/80">
           {formatHistoryDate(item.createdAt)}
         </span>
       </div>
@@ -57,7 +57,7 @@ export const HistoryAlbumCard = ({
             ))}
           </div>
         ) : (
-          <span className="text-xs text-amber-700/70">키워드 없음</span>
+          <span className="font-doc-aux text-xs text-amber-700/70">키워드 없음</span>
         )}
       </div>
     </button>
