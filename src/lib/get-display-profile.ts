@@ -1,4 +1,5 @@
-import { getUserProfile } from "@/services/profile-service";
+import { redirect } from "next/navigation";
+import { getUserProfileOrEnsure } from "@/services/profile-service";
 import type { Session } from "next-auth";
 
 interface DisplayProfile {
@@ -6,27 +7,29 @@ interface DisplayProfile {
   image: string | null;
 }
 
+const FORCE_SIGNOUT_PATH = "/api/auth/force-signout";
+
 export const getDisplayProfile = async (
   session: Session,
 ): Promise<DisplayProfile> => {
   if (!session.user?.id) {
     return {
-      nickname: session.user?.name ?? "사용자",
+      nickname: session.user?.name ?? "독스리더",
       image: session.user?.image ?? null,
     };
   }
 
-  const profile = await getUserProfile(session.user.id);
+  const profile = await getUserProfileOrEnsure(
+    session.user.id,
+    session.user.name ?? "독스리더",
+  );
 
-  if (profile) {
-    return {
-      nickname: profile.nickname,
-      image: profile.image,
-    };
+  if (!profile) {
+    redirect(FORCE_SIGNOUT_PATH);
   }
 
   return {
-    nickname: session.user.name ?? "사용자",
-    image: session.user.image ?? null,
+    nickname: profile.nickname,
+    image: profile.image,
   };
 };

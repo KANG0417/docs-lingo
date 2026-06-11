@@ -25,7 +25,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.AUTH_GOOGLE_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
-      authorization: { params: { prompt: "select_account" } },
     }),
     Kakao({
       clientId: process.env.AUTH_KAKAO_ID,
@@ -33,7 +32,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       authorization: {
         url: "https://kauth.kakao.com/oauth/authorize",
         params: {
-          prompt: "login",
           scope: "profile_nickname profile_image",
         },
       },
@@ -53,7 +51,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.AUTH_NAVER_SECRET,
       authorization: {
         url: "https://nid.naver.com/oauth2.0/authorize",
-        params: { auth_type: "reprompt" },
       },
       profile: (profile: NaverProfile) => ({
         id: profile.response.id,
@@ -97,7 +94,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       await syncUserProfile({
         userId: user.id,
-        nickname: user.name,
+        nickname: user.name ?? "사용자",
         image: user.image,
       });
     },

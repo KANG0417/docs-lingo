@@ -1,0 +1,3 @@
+export const WITHDRAWAL_CONFIRMATION_PHRASE = "탈퇴하겠습니다";
+
+export const WITHDRAWAL_GRACE_PERIOD_MS = 24 * 60 * 60 * 1000;

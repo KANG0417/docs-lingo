@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS public.profiles
     id uuid NOT NULL,
     nickname text NOT NULL,
     image text,
+    withdrawal_scheduled_at timestamp with time zone,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT profiles_pkey PRIMARY KEY (id),
@@ -61,3 +62,6 @@ CREATE TABLE IF NOT EXISTS public.profile_histories
 
 CREATE INDEX IF NOT EXISTS profile_histories_user_id_idx
     ON public.profile_histories (user_id);
+
+ALTER TABLE public.profiles
+    ADD COLUMN IF NOT EXISTS withdrawal_scheduled_at timestamp with time zone;

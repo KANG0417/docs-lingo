@@ -6,7 +6,7 @@ import { Navbar } from "@/components/organisms/header/navbar";
 import { DashboardTemplate } from "@/components/templates/dashboard/dashboard-template";
 import { auth } from "@/lib/auth";
 import { getDisplayProfile } from "@/lib/get-display-profile";
-import { getUserProfile } from "@/services/profile-service";
+import { getUserProfileOrEnsure } from "@/services/profile-service";
 
 export const metadata: Metadata = {
   title: "독스링고 - 개인정보 변경",
@@ -21,10 +21,13 @@ const ProfilePage = async (): Promise<ReactElement> => {
   }
 
   const displayProfile = await getDisplayProfile(session);
-  const profile = await getUserProfile(session.user.id);
+  const profile = await getUserProfileOrEnsure(
+    session.user.id,
+    session.user.name ?? "사용자",
+  );
 
   if (!profile) {
-    redirect("/");
+    redirect("/api/auth/force-signout");
   }
 
   return (
