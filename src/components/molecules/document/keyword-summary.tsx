@@ -1,10 +1,25 @@
 import type { ReactElement } from "react";
+import { splitTextByInlineMarkup } from "@/lib/translation/highlight-keywords";
 import { normalizeSummaryTerms } from "@/lib/translation/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
 
 interface KeywordSummaryProps {
   summaryTerms: KeywordTerm[];
 }
+
+const renderDescriptionSegments = (description: string): ReactElement[] => {
+  return splitTextByInlineMarkup(description).map((segment, index) => {
+    if (segment.type === "bold") {
+      return (
+        <strong key={`desc-bold-${index}`} className="note-highlight">
+          {segment.value}
+        </strong>
+      );
+    }
+
+    return <span key={`desc-text-${index}`}>{segment.value}</span>;
+  });
+};
 
 export const KeywordSummary = ({
   summaryTerms,
@@ -20,7 +35,7 @@ export const KeywordSummary = ({
   }
 
   return (
-    <ul className="flex flex-col gap-3">
+    <ul className="keyword-summary flex flex-col gap-3">
       {normalizedTerms.map((item) => (
         <li
           key={item.term}
@@ -32,7 +47,7 @@ export const KeywordSummary = ({
             <span className="emphasis-underline">{item.term}</span>
           )}
           <span className="mx-2 font-bold text-amber-700">:</span>
-          <span>{item.description}</span>
+          <span>{renderDescriptionSegments(item.description)}</span>
         </li>
       ))}
     </ul>

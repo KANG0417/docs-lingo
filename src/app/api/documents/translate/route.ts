@@ -7,6 +7,7 @@ import {
   toTranslationError,
 } from "@/lib/translation/translation-errors";
 import { normalizeDocumentUrl } from "@/lib/document/normalize-document-url";
+import { validateOfficialDocumentUrl } from "@/lib/document/validate-official-document-url";
 import {
   translateDocumentFromText,
   translateDocumentFromUrl,
@@ -56,6 +57,20 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     } catch {
       return NextResponse.json(
         { message: "유효한 URL 형식이 아닙니다." },
+        { status: 400 },
+      );
+    }
+
+    const normalizedUrl = normalizeDocumentUrl(trimmedUrl);
+    const officialDocumentValidation =
+      await validateOfficialDocumentUrl(normalizedUrl);
+
+    if (!officialDocumentValidation.isOfficial) {
+      return NextResponse.json(
+        {
+          message: officialDocumentValidation.message,
+          code: "UNOFFICIAL_DOCUMENT",
+        },
         { status: 400 },
       );
     }

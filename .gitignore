@@ -20,6 +20,9 @@
 # production
 /build
 
+# figma (local sync scripts — not for GitHub)
+/scripts/
+
 # misc
 .DS_Store
 *.pem

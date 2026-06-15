@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS public.bookmark_folders
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     user_id uuid NOT NULL,
     name text NOT NULL,
+    sort_order integer NOT NULL DEFAULT 0,
+    is_default boolean NOT NULL DEFAULT false,
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT bookmark_folders_pkey PRIMARY KEY (id),
     CONSTRAINT bookmark_folders_user_name_unique UNIQUE (user_id, name),
@@ -42,3 +44,7 @@ CREATE TABLE IF NOT EXISTS public.bookmarks
 
 CREATE INDEX IF NOT EXISTS bookmarks_user_id_idx ON public.bookmarks (user_id);
 CREATE INDEX IF NOT EXISTS bookmarks_folder_id_idx ON public.bookmarks (folder_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS bookmark_folders_one_default_per_user_idx
+    ON public.bookmark_folders (user_id)
+    WHERE is_default = true;

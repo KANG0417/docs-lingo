@@ -4,12 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import {
   deleteTranslationHistoryItem,
   getTranslationHistory,
+  getTranslationHistoryDateKeys,
 } from "@/services/translation-client-service";
 import { getTranslationDayRange } from "@/lib/translation/translation-day-range";
 import type { TranslationHistoryResponse } from "@/types/translation";
 
 interface UseTranslationHistoryReturn {
   historyResponse: TranslationHistoryResponse | null;
+  historyDateKeys: string[];
   selectedDateKey: string;
   currentPage: number;
   isLoading: boolean;
@@ -30,6 +32,7 @@ export const useTranslationHistory = (
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [historyResponse, setHistoryResponse] =
     useState<TranslationHistoryResponse | null>(null);
+  const [historyDateKeys, setHistoryDateKeys] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -56,9 +59,23 @@ export const useTranslationHistory = (
     }
   }, [currentPage, selectedDateKey]);
 
+  const refreshHistoryDateKeys = useCallback(async (): Promise<void> => {
+    try {
+      const { dateKeys } = await getTranslationHistoryDateKeys();
+      setHistoryDateKeys(dateKeys);
+    } catch (error) {
+      console.error("[refreshHistoryDateKeys]", error);
+      setHistoryDateKeys([]);
+    }
+  }, []);
+
   useEffect(() => {
     void refreshHistory();
   }, [refreshHistory, refreshKey]);
+
+  useEffect(() => {
+    void refreshHistoryDateKeys();
+  }, [refreshHistoryDateKeys, refreshKey]);
 
   const deleteHistoryItem = useCallback(
     async (translationId: string): Promise<boolean> => {
@@ -100,6 +117,8 @@ export const useTranslationHistory = (
           console.error("[deleteHistoryItem] refresh", refreshError);
         }
 
+        void refreshHistoryDateKeys();
+
         return true;
       } catch (error) {
         setErrorMessage(
@@ -112,7 +131,7 @@ export const useTranslationHistory = (
         setDeletingId(null);
       }
     },
-    [currentPage, selectedDateKey],
+    [currentPage, selectedDateKey, refreshHistoryDateKeys],
   );
 
   const handleSetSelectedDateKey = (dateKey: string): void => {
@@ -122,6 +141,7 @@ export const useTranslationHistory = (
 
   return {
     historyResponse,
+    historyDateKeys,
     selectedDateKey,
     currentPage,
     isLoading,

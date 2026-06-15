@@ -1,63 +1,147 @@
 "use client";
 
+import clsx from "clsx";
 import Link from "next/link";
 import { UserAvatar } from "@/components/atoms/avatar/user-avatar";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ReactElement } from "react";
 import { signOutFromSns } from "@/services/auth-service";
+
+const USER_MENU_WIDTH_PX = 224;
+
+interface UserMenuPosition {
+  top: number;
+  left: number;
+}
 
 interface UserMenuProps {
   nickname: string;
   image: string | null;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
-export const UserMenu = ({ nickname, image }: UserMenuProps): ReactElement => {
+export const UserMenu = ({
+  nickname,
+  image,
+  onOpenChange,
+}: UserMenuProps): ReactElement => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const [menuPosition, setMenuPosition] = useState<UserMenuPosition | null>(
+    null,
+  );
+  const [isMounted, setIsMounted] = useState<boolean>(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLElement | null>(null);
+
+  const updateMenuPosition = useCallback((): void => {
+    if (!buttonRef.current) {
+      return;
+    }
+
+    const rect = buttonRef.current.getBoundingClientRect();
+
+    setMenuPosition({
+      top: rect.bottom + 8,
+      left: Math.max(8, rect.right - USER_MENU_WIDTH_PX),
+    });
+  }, []);
+
+  const setMenuOpen = useCallback(
+    (nextOpen: boolean): void => {
+      setIsOpen(nextOpen);
+      onOpenChange?.(nextOpen);
+    },
+    [onOpenChange],
+  );
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setMenuPosition(null);
+      return;
+    }
+
+    updateMenuPosition();
+
+    const handleScrollOrResize = (): void => {
+      updateMenuPosition();
+    };
+
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [isOpen, updateMenuPosition]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     const handleOutsideClick = (event: MouseEvent): void => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
       }
+
+      if (rootRef.current?.contains(target) || menuRef.current?.contains(target)) {
+        return;
+      }
+
+      setMenuOpen(false);
     };
 
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
+  }, [isOpen, setMenuOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleEscape = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [isOpen, setMenuOpen]);
 
   const handleToggle = (): void => {
-    setIsOpen((prev) => !prev);
+    setMenuOpen(!isOpen);
   };
 
   const handleClose = (): void => {
-    setIsOpen(false);
+    setMenuOpen(false);
   };
 
   const handleSignOut = (): void => {
     void signOutFromSns();
   };
 
-  return (
-    <div ref={menuRef} className="relative">
-      <button
-        type="button"
-        onClick={handleToggle}
-        aria-haspopup="menu"
-        aria-expanded={isOpen}
-        className="flex items-center gap-3.5 rounded-full py-2 pl-2 pr-6 transition-colors hover:bg-white/10"
-      >
-        <UserAvatar nickname={nickname} image={image} size="sm" />
-        <span className="font-doc-nickname text-lg font-semibold text-indigo-100">
-          {nickname}
-        </span>
-      </button>
-
-      {isOpen && (
-        <nav
-          role="menu"
-          className="font-doc-popup absolute right-0 top-full z-20 mt-2 w-56 -rotate-1 rounded-sm border border-amber-200 bg-amber-50 shadow-[2px_4px_12px_rgba(120,90,20,0.18)]"
-        >
+  const menuPanel = isOpen && menuPosition && (
+    <nav
+      ref={menuRef}
+      role="menu"
+      style={{
+        top: menuPosition.top,
+        left: menuPosition.left,
+        width: USER_MENU_WIDTH_PX,
+      }}
+      className="font-doc-popup relative fixed z-[120] -rotate-1 rounded-sm border border-amber-200 bg-amber-50 shadow-[2px_4px_12px_rgba(120,90,20,0.18)]"
+    >
           {/* 메모지 상단 테이프 */}
           <span
             aria-hidden="true"
@@ -142,7 +226,44 @@ export const UserMenu = ({ nickname, image }: UserMenuProps): ReactElement => {
             로그아웃
           </button>
         </nav>
-      )}
+  );
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={handleToggle}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        className="flex items-center gap-3.5 rounded-full py-2 pl-2 pr-5 transition-colors hover:bg-white/10"
+      >
+        <UserAvatar nickname={nickname} image={image} size="sm" />
+        <span className="font-doc-nickname text-lg font-semibold text-indigo-100">
+          {nickname}
+        </span>
+        <svg
+          width={16}
+          height={16}
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+          className={clsx(
+            "shrink-0 text-indigo-200/80 transition-transform duration-200",
+            isOpen && "rotate-180",
+          )}
+        >
+          <path
+            d="m6 9 6 6 6-6"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+
+      {isMounted && menuPanel ? createPortal(menuPanel, document.body) : null}
     </div>
   );
 };

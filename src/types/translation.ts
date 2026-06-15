@@ -12,6 +12,7 @@ export interface TranslationHistoryItem {
   documentId: string;
   title: string;
   url: string | null;
+  historySummary: string;
   originalContent: string | null;
   translatedContent: string;
   summaryTerms: KeywordTerm[];
@@ -46,4 +47,8 @@ export interface TranslationHistoryResponse {
   pageSize: number;
   totalPages: number;
   dateKey: string;
+}
+
+export interface TranslationHistoryDateKeysResponse {
+  dateKeys: string[];
 }

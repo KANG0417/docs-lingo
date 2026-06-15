@@ -14,7 +14,7 @@ const FIXED_HOLIDAY_MONTH_DAYS = new Set([
 
 /**
  * 설·추석·대체공휴일·부처님오신날·임시공휴일 등 연도별 공휴일 (YYYY-MM-DD, KST)
- * 히스토리 조회 범위(약 3개월)를 커버하도록 인근 연도를 포함합니다.
+ * 히스토리 조회 범위(약 1년)를 커버하도록 인근 연도를 포함합니다.
  */
 const VARIABLE_HOLIDAY_DATE_KEYS = new Set([
   // 2024

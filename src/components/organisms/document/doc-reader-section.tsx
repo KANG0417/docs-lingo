@@ -1,11 +1,15 @@
 "use client";
 
 import clsx from "clsx";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactElement } from "react";
 import { LoadingBar } from "@/components/atoms/feedback/loading-bar";
+import { OfficialDocumentNotice } from "@/components/molecules/document/official-document-notice";
 import { TranslationHistoryPanel } from "@/components/organisms/document/translation-history-panel";
 import { TranslationResultSection } from "@/components/organisms/document/translation-result-section";
+import {
+  isOfficialDocumentOnlyMessage,
+} from "@/constants/official-document";
 import {
   TEXT_READING_LOADING_MESSAGES,
   URL_TRANSLATION_LOADING_MESSAGES,
@@ -20,7 +24,11 @@ const INPUT_MODES: { id: DocInputMode; label: string }[] = [
 ];
 
 const isPersistedTranslation = (translationId: string): boolean => {
-  return translationId !== "local-text" && translationId !== "local-pagination";
+  return (
+    translationId !== "local-text" &&
+    translationId !== "local-pagination" &&
+    translationId !== "local-untranslated"
+  );
 };
 
 export const DocReaderSection = (): ReactElement => {
@@ -34,17 +42,45 @@ export const DocReaderSection = (): ReactElement => {
     readFromText,
     selectHistoryItem,
     clearTranslationResult,
+    clearErrorMessage,
   } = useDocumentReader();
 
   const [urlInput, setUrlInput] = useState<string>("");
   const [textInput, setTextInput] = useState<string>("");
   const [historyRefreshKey, setHistoryRefreshKey] = useState<number>(0);
+  const translationResultRef = useRef<HTMLDivElement>(null);
+  const wasLoadingRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    const shouldScrollToResult =
+      wasLoadingRef.current &&
+      !isLoading &&
+      translationResult &&
+      translationResultRef.current;
+
+    wasLoadingRef.current = isLoading;
+
+    if (shouldScrollToResult) {
+      translationResultRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [isLoading, translationResult]);
 
   useEffect(() => {
     if (translationResult && isPersistedTranslation(translationResult.id)) {
       setHistoryRefreshKey((prev) => prev + 1);
     }
   }, [translationResult]);
+
+  const handleUrlInputChange = (value: string): void => {
+    setUrlInput(value);
+
+    if (!value.trim()) {
+      clearErrorMessage();
+    }
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -68,6 +104,13 @@ export const DocReaderSection = (): ReactElement => {
     }
   };
 
+  const isOfficialDocNotice = isOfficialDocumentOnlyMessage(errorMessage);
+  const shouldShowOfficialDocumentGuide =
+    mode === "url" &&
+    !isLoading &&
+    !translationResult &&
+    !(isOfficialDocNotice && errorMessage);
+
   return (
     <section
       aria-label="문서 읽기"
@@ -82,15 +125,15 @@ export const DocReaderSection = (): ReactElement => {
         </p>
       </header>
 
-      <div className="flex w-full flex-col gap-6 lg:flex-row lg:items-start">
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
-          <div className="relative w-full -rotate-[0.4deg] transition-transform duration-300 hover:rotate-0">
+      <div className="doc-reader-layout grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_20rem] xl:gap-12">
+        <div className="doc-reader-main flex max-w-full flex-col gap-6">
+          <div className="doc-reader-memo-tilt relative">
             <span
               aria-hidden="true"
               className="absolute -top-3 left-1/2 z-10 h-6 w-24 -translate-x-1/2 rotate-2 rounded-[2px] bg-indigo-200/40 shadow-sm backdrop-blur-sm"
             />
 
-            <div className="rounded-sm border border-amber-200 bg-amber-50 p-6 shadow-[4px_8px_24px_rgba(0,0,0,0.45)]">
+            <div className="memo-lines rounded-sm border border-amber-200 bg-amber-50 shadow-[4px_8px_24px_rgba(0,0,0,0.45)]">
               <div
                 role="tablist"
                 aria-label="입력 방식 선택"
@@ -104,10 +147,10 @@ export const DocReaderSection = (): ReactElement => {
                     aria-selected={mode === inputMode.id}
                     onClick={() => changeMode(inputMode.id)}
                     className={clsx(
-                      "rounded-md px-4 py-2 text-sm font-semibold transition-colors",
+                      "rounded-md border-2 px-4 py-2 text-sm font-semibold transition-colors",
                       mode === inputMode.id
-                        ? "bg-[#0a1030] text-indigo-100 shadow-sm"
-                        : "text-amber-800/70 hover:text-amber-900",
+                        ? "border-[#0a1030] bg-[#0a1030] text-indigo-100 shadow-sm ring-2 ring-[#0a1030] ring-offset-1 ring-offset-amber-100/80"
+                        : "border-transparent text-amber-800/70 hover:text-amber-900",
                     )}
                   >
                     {inputMode.label}
@@ -120,11 +163,11 @@ export const DocReaderSection = (): ReactElement => {
                   <input
                     type="url"
                     value={urlInput}
-                    onChange={(event) => setUrlInput(event.target.value)}
+                    onChange={(event) => handleUrlInputChange(event.target.value)}
                     placeholder="https://example.com/docs"
                     required
                     disabled={isLoading}
-                    className="h-12 w-full rounded-md border border-dashed border-amber-400 bg-white/80 px-4 text-sm text-zinc-900 placeholder:text-amber-700/40 focus:border-solid focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-amber-100/50"
+                    className="h-12 w-full rounded-md border border-dashed border-[#0a1030] bg-white/80 px-4 text-sm text-zinc-900 placeholder:text-amber-700/40 focus:border-solid focus:border-[#0a1030] focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-amber-100/50"
                   />
                 ) : (
                   <textarea
@@ -134,7 +177,7 @@ export const DocReaderSection = (): ReactElement => {
                     required
                     disabled={isLoading}
                     rows={10}
-                    className="font-doc-body memo-lines w-full resize-none overflow-y-auto rounded-md border border-dashed border-amber-400 bg-white/80 p-4 text-sm leading-[28px] text-zinc-900 placeholder:text-amber-700/40 focus:border-solid focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-amber-100/50"
+                    className="font-doc-body memo-lines w-full resize-none overflow-y-auto rounded-md border border-dashed border-[#0a1030] bg-white/80 p-4 text-sm leading-[28px] text-zinc-900 placeholder:text-amber-700/40 focus:border-solid focus:border-[#0a1030] focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-amber-100/50"
                   />
                 )}
 
@@ -151,6 +194,12 @@ export const DocReaderSection = (): ReactElement => {
                       ? "번역하기"
                       : "문서 읽기"}
                 </button>
+
+                {mode === "url" && isOfficialDocNotice && errorMessage && (
+                  <OfficialDocumentNotice live="polite" />
+                )}
+
+                {shouldShowOfficialDocumentGuide && <OfficialDocumentNotice />}
               </form>
 
               {isLoading && (
@@ -165,10 +214,10 @@ export const DocReaderSection = (): ReactElement => {
                 </div>
               )}
 
-              {errorMessage && (
+              {errorMessage && !isOfficialDocNotice && (
                 <p
                   role="alert"
-                  className="font-doc-aux mt-5 whitespace-pre-line rounded-md border border-dashed border-red-400 bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-600"
+                  className="font-doc-aux mt-5 w-full whitespace-pre-line rounded-md border border-dashed border-red-400 bg-red-50 px-4 py-3 text-sm leading-relaxed text-red-600"
                 >
                   {errorMessage}
                 </p>
@@ -177,7 +226,12 @@ export const DocReaderSection = (): ReactElement => {
           </div>
 
           {translationResult && !isLoading && (
-            <TranslationResultSection result={translationResult} />
+            <div ref={translationResultRef} className="overflow-visible">
+              <TranslationResultSection
+                result={translationResult}
+                isMemoTilted
+              />
+            </div>
           )}
         </div>
 

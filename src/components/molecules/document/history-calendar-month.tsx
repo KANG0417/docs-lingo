@@ -43,8 +43,8 @@ export const HistoryCalendarMonth = ({
   }, [goToMonth, nextMonth]);
 
   return (
-    <div className={className} {...divProps}>
-      <div className="history-calendar-month-body">
+    <div className={clsx("history-calendar-month-body", className)} {...divProps}>
+      <div className="history-calendar-nav-row">
         <button
           type="button"
           onClick={handlePreviousClick}
@@ -59,10 +59,7 @@ export const HistoryCalendarMonth = ({
           ‹
         </button>
 
-        <div className="history-calendar-grid-wrap">
-          {monthCaption}
-          {monthGrid}
-        </div>
+        <div className="history-calendar-caption-wrap">{monthCaption}</div>
 
         <button
           type="button"
@@ -77,6 +74,10 @@ export const HistoryCalendarMonth = ({
         >
           ›
         </button>
+      </div>
+
+      <div className="history-calendar-grid-wrap history-calendar-grid-full">
+        {monthGrid}
       </div>
     </div>
   );

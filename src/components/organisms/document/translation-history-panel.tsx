@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import type { ReactElement } from "react";
 import { HistoryDatePicker } from "@/components/molecules/document/history-date-picker";
 import { HistoryListItem } from "@/components/molecules/document/history-list-item";
 import { HistoryPagination } from "@/components/molecules/document/history-pagination";
 import { useTranslationHistory } from "@/hooks/use-translation-history";
+import { getTranslationHistoryItem } from "@/services/translation-client-service";
 import type {
   DocumentTranslationResult,
   TranslationHistoryItem,
@@ -40,8 +42,10 @@ export const TranslationHistoryPanel = ({
   onDeletedTranslation,
   refreshKey,
 }: TranslationHistoryPanelProps): ReactElement => {
+  const [loadingItemId, setLoadingItemId] = useState<string | null>(null);
   const {
     historyResponse,
+    historyDateKeys,
     selectedDateKey,
     currentPage,
     isLoading,
@@ -53,7 +57,19 @@ export const TranslationHistoryPanel = ({
   } = useTranslationHistory(refreshKey);
 
   const handleSelect = (item: TranslationHistoryItem): void => {
-    onSelectHistory(toTranslationResult(item));
+    setLoadingItemId(item.id);
+
+    void (async (): Promise<void> => {
+      try {
+        const fullItem = await getTranslationHistoryItem(item.id);
+        onSelectHistory(toTranslationResult(fullItem));
+      } catch (error) {
+        console.error("[TranslationHistoryPanel] select", error);
+        onSelectHistory(toTranslationResult(item));
+      } finally {
+        setLoadingItemId(null);
+      }
+    })();
   };
 
   const handleDelete = async (item: TranslationHistoryItem): Promise<void> => {
@@ -71,7 +87,7 @@ export const TranslationHistoryPanel = ({
   return (
     <aside
       aria-label="번역 히스토리"
-      className="relative flex h-full w-full shrink-0 flex-col transition-transform duration-300 lg:w-72 xl:w-80 lg:rotate-[0.5deg] lg:hover:rotate-0"
+      className="relative flex w-full min-w-0 shrink-0 flex-col lg:w-full"
     >
       <span
         aria-hidden="true"
@@ -82,26 +98,24 @@ export const TranslationHistoryPanel = ({
         className="absolute -top-2.5 right-5 z-10 hidden h-5 w-14 rotate-6 rounded-[2px] bg-indigo-200/40 shadow-sm backdrop-blur-sm lg:block"
       />
 
-      <div className="history-memo-panel memo-lines flex h-full flex-col overflow-hidden rounded-sm border border-amber-200 shadow-[4px_8px_24px_rgba(0,0,0,0.45)]">
-        <header className="history-memo-header border-b border-dashed border-amber-300 px-4 py-4">
+      <div className="history-memo-panel history-sidebar-panel memo-lines flex h-full min-h-0 flex-col rounded-sm border shadow-[4px_8px_24px_rgba(0,0,0,0.45)]">
+        <header className="history-memo-header history-sidebar-header shrink-0 overflow-visible border-b border-dashed px-4 py-4">
           <h2 className="font-doc-title text-base font-bold text-amber-900">
             번역 히스토리
           </h2>
           <div className="mt-2">
             <p className="font-doc-aux text-xs font-semibold text-amber-800/80">
               날짜 선택
-              <span className="ml-1.5 font-normal text-amber-700/65">
-                (최근3개월)
-              </span>
             </p>
             <HistoryDatePicker
               selectedDateKey={selectedDateKey}
+              historyDateKeys={historyDateKeys}
               onDateKeyChange={setSelectedDateKey}
             />
           </div>
         </header>
 
-        <div className="history-memo-list history-memo-margin flex min-h-0 flex-1 flex-col">
+        <div className="history-memo-list history-memo-margin memo-lines flex min-h-0 flex-1 flex-col overflow-y-auto">
           {isLoading && (
             <p className="font-doc-aux px-3 py-8 text-center text-sm text-amber-700/70">
               메모를 펼치는 중...
@@ -131,6 +145,7 @@ export const TranslationHistoryPanel = ({
                     item={item}
                     isSelected={selectedTranslationId === item.id}
                     isDeleting={deletingId === item.id}
+                    isLoading={loadingItemId === item.id}
                     onSelect={handleSelect}
                     onDelete={(historyItem) => {
                       void handleDelete(historyItem);
@@ -142,12 +157,14 @@ export const TranslationHistoryPanel = ({
           )}
         </div>
 
-        <HistoryPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalCount={totalCount}
-          onPageChange={setCurrentPage}
-        />
+        {totalPages > 1 && (
+          <HistoryPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalCount={totalCount}
+            onPageChange={setCurrentPage}
+          />
+        )}
       </div>
     </aside>
   );

@@ -16,7 +16,11 @@ import {
 import type { UserAiCredentials } from "@/types/ai-settings";
 import type { DocumentCodeBlock } from "@/types/document-code-block";
 import type { DocumentImage } from "@/types/document-image";
+import {
+  normalizeInlineMarkupSource,
+} from "@/lib/translation/inline-markup-utils";
 import { normalizeTranslatedLayout } from "@/lib/translation/normalize-translated-layout";
+import { normalizeTerminologyMarkup } from "@/lib/translation/normalize-terminology-markup";
 import { buildInterpretationPrompt } from "@/lib/translation/translation-interpretation-prompt";
 import { normalizeSummaryTerms } from "@/lib/translation/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
@@ -43,7 +47,9 @@ export interface ProcessedDocument {
 }
 
 const normalizeTranslatedContent = (content: string): string => {
-  return normalizeTranslatedLayout(content);
+  return normalizeTerminologyMarkup(
+    normalizeTranslatedLayout(normalizeInlineMarkupSource(content)),
+  );
 };
 
 const processWithGemini = async (

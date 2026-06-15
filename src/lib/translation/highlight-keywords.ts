@@ -1,11 +1,16 @@
 import { normalizeTermKey } from "@/lib/translation/summary-terms-normalizer";
+import {
+  normalizeInlineMarkupSource,
+  stripResidualMarkupTags,
+} from "@/lib/translation/inline-markup-utils";
 import type { KeywordTerm } from "@/types/translation";
 
 export type TextSegmentType =
   | "text"
   | "keyword"
   | "emphasis"
-  | "section-label";
+  | "section-label"
+  | "bold";
 
 export interface TextSegment {
   type: TextSegmentType;
@@ -31,13 +36,8 @@ const resolveMatchTerm = (
     return { matchTerm: trimmedTerm, type: "emphasis" };
   }
 
-  if (type === "keyword" && /\s/.test(trimmedTerm)) {
-    const [firstWord] = trimmedTerm.split(/\s+/);
-
-    return {
-      matchTerm: firstWord ?? trimmedTerm,
-      type: "keyword",
-    };
+  if (/\s/.test(trimmedTerm)) {
+    return { matchTerm: trimmedTerm, type: "emphasis" };
   }
 
   return { matchTerm: trimmedTerm, type };
@@ -204,46 +204,59 @@ export const expandSegmentsWithSectionLabels = (
   });
 };
 
-const INLINE_MARKUP_PATTERN = /(<u>[\s\S]*?<\/u>|`[^`\n]+`)/g;
+const INLINE_MARKUP_PATTERN =
+  /<u>([\s\S]*?)<\/u>|`([^`\n]+)`|\*\*([^*\n]+)\*\*/gi;
 
 export const splitTextByInlineMarkup = (text: string): TextSegment[] => {
+  const normalizedText = normalizeInlineMarkupSource(text);
   const segments: TextSegment[] = [];
   let lastIndex = 0;
 
-  for (const match of text.matchAll(INLINE_MARKUP_PATTERN)) {
+  for (const match of normalizedText.matchAll(INLINE_MARKUP_PATTERN)) {
     const matchIndex = match.index ?? 0;
-    const matchedValue = match[0] ?? "";
+    const underlineValue = match[1];
+    const backtickValue = match[2];
+    const boldValue = match[3];
 
     if (matchIndex > lastIndex) {
       segments.push({
         type: "text",
-        value: text.slice(lastIndex, matchIndex),
+        value: stripResidualMarkupTags(
+          normalizedText.slice(lastIndex, matchIndex),
+        ),
       });
     }
 
-    if (matchedValue.startsWith("<u>")) {
+    if (underlineValue !== undefined) {
       segments.push({
         type: "emphasis",
-        value: matchedValue.replace(/^<u>|<\/u>$/g, ""),
+        value: underlineValue.trim(),
       });
-    } else if (matchedValue.startsWith("`")) {
+    } else if (backtickValue !== undefined) {
       segments.push({
         type: "keyword",
-        value: matchedValue.slice(1, -1),
+        value: backtickValue.trim(),
+      });
+    } else if (boldValue !== undefined) {
+      segments.push({
+        type: "bold",
+        value: boldValue.trim(),
       });
     }
 
-    lastIndex = matchIndex + matchedValue.length;
+    lastIndex = matchIndex + match[0].length;
   }
 
-  if (lastIndex < text.length) {
+  if (lastIndex < normalizedText.length) {
     segments.push({
       type: "text",
-      value: text.slice(lastIndex),
+      value: stripResidualMarkupTags(normalizedText.slice(lastIndex)),
     });
   }
 
-  return segments.length > 0 ? segments : [{ type: "text", value: text }];
+  return segments.length > 0
+    ? segments
+    : [{ type: "text", value: stripResidualMarkupTags(normalizedText) }];
 };
 
 export const applyInlineMarkupToSegments = (

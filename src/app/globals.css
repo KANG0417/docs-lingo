@@ -174,6 +174,13 @@ body {
   color: #312e81;
 }
 
+/* 필기 스타일 핵심 강조 (마크다운 **...**) */
+.note-highlight {
+  font-family: var(--font-doc-translation-bold), var(--font-sans), sans-serif;
+  font-weight: 700;
+  color: #18181b;
+}
+
 /* 번역 결과 — Binggrae2 본문 · Binggrae2 Bold 타이틀·강조 */
 .font-doc-translation {
   font-family: var(--font-doc-translation), var(--font-sans), sans-serif;
@@ -189,30 +196,85 @@ body {
 }
 
 .translation-result .section-label,
-.translation-result .emphasis-underline,
+.translation-result .note-highlight,
+.translation-result .keyword-summary .note-highlight,
 .translation-content .section-label,
-.translation-content .emphasis-underline,
-.translation-content .translation-section-heading {
+.translation-content .note-highlight,
+.translation-content .translation-section-heading,
+.keyword-summary .note-highlight {
   font-family: var(--font-doc-translation-bold), var(--font-sans), sans-serif;
+}
+
+/* 용어 밑줄 — 굵게 아닌 밑줄만 (중요 문구는 note-highlight) */
+.translation-content .emphasis-underline {
+  font-family: var(--font-doc-translation), var(--font-sans), sans-serif;
+  font-weight: inherit;
 }
 
 .translation-paragraph {
   line-height: 1.9375rem;
 }
 
+.translation-result-title-link {
+  display: inline;
+  color: #18181b;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 0.25s ease,
+    filter 0.25s ease;
+}
+
+.translation-result-title-link:hover,
+.translation-result-title-link:focus-visible {
+  background-image: linear-gradient(
+    105deg,
+    #0a1030 0%,
+    #141c4a 16%,
+    #1e1b4b 32%,
+    #312e81 48%,
+    #4338ca 64%,
+    #6366f1 80%,
+    #a5b4fc 100%
+  );
+  background-size: 220% 100%;
+  background-position: 100% center;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.28));
+  animation: translation-title-cosmos-shift 2.8s ease-in-out infinite alternate;
+}
+
+.translation-result-title-link:focus-visible {
+  outline: 2px solid rgba(99, 102, 241, 0.45);
+  outline-offset: 3px;
+  border-radius: 0.125rem;
+}
+
+@keyframes translation-title-cosmos-shift {
+  from {
+    background-position: 0% center;
+  }
+
+  to {
+    background-position: 100% center;
+  }
+}
+
 .translation-section-heading {
   display: inline-block;
-  border-radius: 0.125rem;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 245, 130, 0) 0%,
-    rgba(255, 245, 130, 0.95) 18%,
-    rgba(255, 245, 130, 0.95) 82%,
-    rgba(255, 245, 130, 0) 100%
-  );
-  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  background-color: rgba(254, 240, 138, 0.95);
+  padding: 0.125rem 0.5rem;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+  box-shadow: inset 0 -1px 0 rgba(217, 119, 6, 0.15);
+}
+
+.keyword-summary-description {
+  font-family: var(--font-doc-translation), var(--font-sans), sans-serif;
 }
 
 /* 핵심 키워드 코드블록 강조 */
@@ -454,12 +516,12 @@ select:disabled {
 /* 번역 히스토리 캘린더 — react-day-picker 커스텀 */
 .history-day-picker .rdp-root {
   --rdp-accent-color: #0a1030;
-  --rdp-accent-background-color: rgba(228, 228, 231, 0.65);
-  --rdp-day-height: 2.125rem;
-  --rdp-day-width: 2.125rem;
-  --rdp-day_button-height: 1.5rem;
-  --rdp-day_button-width: 1.5rem;
-  --rdp-day_button-border-radius: 9999px;
+  --rdp-accent-background-color: #0a1030;
+  --rdp-day-height: 2.25rem;
+  --rdp-day-width: 2.25rem;
+  --rdp-day_button-height: 2rem;
+  --rdp-day_button-width: 2rem;
+  --rdp-day_button-border-radius: 0.375rem;
   --rdp-nav_button-height: 1.75rem;
   --rdp-nav_button-width: 1.75rem;
   --rdp-nav-height: 2rem;
@@ -474,11 +536,12 @@ select:disabled {
   table-layout: fixed;
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0.1rem;
+  border-spacing: 0.2rem;
 }
 
 .history-day-picker .rdp-weekday,
-.history-day-picker .rdp-day {
+.history-day-picker .rdp-day,
+.history-day-picker .history-day-picker-cell {
   width: 14.2857%;
   aspect-ratio: 1 / 1;
   height: auto;
@@ -486,6 +549,19 @@ select:disabled {
   box-sizing: border-box;
   text-align: center;
   vertical-align: middle;
+  overflow: visible;
+}
+
+.history-day-picker .rdp-day:not(.history-day-picker-disabled),
+.history-day-picker .history-day-picker-cell:not(.history-day-picker-disabled) {
+  position: relative;
+  cursor: pointer;
+}
+
+.history-day-picker .rdp-day.history-day-picker-disabled,
+.history-day-picker .history-day-picker-cell.history-day-picker-disabled {
+  pointer-events: none;
+  cursor: default;
 }
 
 .history-day-picker .rdp-selected {
@@ -493,10 +569,10 @@ select:disabled {
   font-weight: inherit;
 }
 
-/* 일요일 빨강 · 토요일 진한 갈색 */
+/* 일요일 · 공휴일 진한 붉은색 · 토요일 진한 갈색 */
 .history-day-picker .rdp-weekday:nth-child(1) {
-  font-weight: 600;
-  color: #dc2626;
+  font-weight: 700;
+  color: #991b1b;
 }
 
 .history-day-picker .rdp-weekday:nth-child(7) {
@@ -524,8 +600,8 @@ select:disabled {
     .history-day-picker-disabled
   )
   .history-day-picker-day {
-  font-weight: 600;
-  color: #dc2626;
+  font-weight: 700;
+  color: #991b1b;
 }
 
 .history-day-picker
@@ -544,47 +620,89 @@ select:disabled {
 
 .history-calendar-month-body {
   display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.history-calendar-nav-row {
+  display: flex;
   align-items: center;
-  gap: 0.25rem;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.125rem;
+}
+
+.history-calendar-caption-wrap {
+  min-width: 0;
+  flex: 1;
+  text-align: center;
+}
+
+.history-calendar-caption-wrap .rdp-month_caption {
+  margin-bottom: 0;
 }
 
 .history-calendar-grid-wrap {
   min-width: 0;
-  flex: 1;
+  width: 100%;
+  padding-top: 0.125rem;
+  overflow: visible;
+}
+
+.history-day-picker .rdp-month_grid {
+  overflow: visible;
+}
+
+.history-day-picker .rdp-weekdays {
+  margin-top: 0.125rem;
+}
+
+.history-calendar-grid-full {
+  flex: none;
 }
 
 .history-day-picker-side-nav {
   display: inline-flex;
-  height: 1.75rem;
-  width: 1.75rem;
+  height: 1.625rem;
+  width: 1.625rem;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 9999px;
-  border: 1px dashed rgba(217, 119, 6, 0.45);
-  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 4px rgba(7, 11, 34, 0.18);
   font-family: var(--font-doc-title), var(--font-sans), sans-serif;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 700;
   line-height: 1;
-  color: #92400e;
+  color: rgba(254, 243, 199, 0.95);
   transition:
     background-color 0.15s ease,
-    transform 0.15s ease;
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .history-day-picker-side-nav:not(:disabled):hover {
-  background-color: rgba(254, 243, 199, 0.9);
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.48);
   transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 2px 8px rgba(7, 11, 34, 0.22);
 }
 
 .history-day-picker-side-nav-disabled,
 .history-day-picker-side-nav:disabled {
   cursor: default;
-  border-style: solid;
-  border-color: rgba(217, 119, 6, 0.18);
-  background-color: rgba(254, 243, 199, 0.35);
-  color: rgba(146, 64, 14, 0.35);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(254, 243, 199, 0.35);
   opacity: 1;
   transform: none;
   box-shadow: none;
@@ -597,77 +715,423 @@ select:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.375rem;
-  height: 1.375rem;
-  min-width: 1.375rem;
-  min-height: 1.375rem;
-  max-width: 1.375rem;
-  max-height: 1.375rem;
+  width: 100%;
+  height: 100%;
+  min-width: 1.875rem;
+  min-height: 1.875rem;
+  max-width: none;
+  max-height: none;
   aspect-ratio: 1 / 1;
   padding: 0;
   margin: 0;
-  flex: 0 0 auto;
-  overflow: visible;
+  flex: 1 1 auto;
+  overflow: hidden;
   font-family: var(--font-doc-translation), var(--font-sans), sans-serif;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1;
-  color: #3f3f46;
-  background-color: transparent;
-  border: 2px solid transparent;
-  border-radius: 50%;
+  color: rgba(254, 243, 199, 0.95);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 0.375rem;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   box-sizing: border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 1px 3px rgba(7, 11, 34, 0.15);
   transform: scale(1);
   transform-origin: center center;
-  transition: color 0.28s ease-out;
+  transition:
+    color 0.08s ease,
+    background-color 0.08s ease,
+    border-color 0.08s ease;
+}
+
+@keyframes history-day-picker-hover-pulse {
+  from {
+    transform: scale(1.1);
+  }
+
+  to {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes history-day-picker-selected-pulse {
+  from {
+    transform: scale(1.06);
+  }
+
+  to {
+    transform: scale(1.1);
+  }
+}
+
+@keyframes history-day-meteor-shower {
+  0%,
+  100% {
+    left: -18%;
+    top: -22%;
+    opacity: 0;
+  }
+
+  /* 유성 1 */
+  3% {
+    left: -18%;
+    top: -22%;
+    opacity: 1;
+  }
+
+  13% {
+    left: 102%;
+    top: 88%;
+    opacity: 1;
+  }
+
+  17% {
+    left: 102%;
+    top: 88%;
+    opacity: 0;
+  }
+
+  /* 유성 2 */
+  22% {
+    left: 8%;
+    top: -28%;
+    opacity: 0;
+  }
+
+  25% {
+    left: 8%;
+    top: -28%;
+    opacity: 1;
+  }
+
+  35% {
+    left: 112%;
+    top: 92%;
+    opacity: 1;
+  }
+
+  39% {
+    left: 112%;
+    top: 92%;
+    opacity: 0;
+  }
+
+  /* 유성 3 */
+  44% {
+    left: -22%;
+    top: -12%;
+    opacity: 0;
+  }
+
+  47% {
+    left: -22%;
+    top: -12%;
+    opacity: 1;
+  }
+
+  57% {
+    left: 92%;
+    top: 98%;
+    opacity: 1;
+  }
+
+  61% {
+    left: 92%;
+    top: 98%;
+    opacity: 0;
+  }
+
+  /* 유성 4 */
+  66% {
+    left: 14%;
+    top: -20%;
+    opacity: 0;
+  }
+
+  69% {
+    left: 14%;
+    top: -20%;
+    opacity: 1;
+  }
+
+  79% {
+    left: 108%;
+    top: 86%;
+    opacity: 1;
+  }
+
+  83% {
+    left: 108%;
+    top: 86%;
+    opacity: 0;
+  }
+}
+
+/* 별똥별 — 날짜 버튼 배경 안, 대각선 꼬리 */
+.history-day-picker
+  .rdp-day:not(.history-day-picker-disabled):hover
+  .rdp-day_button,
+.history-day-picker
+  .history-day-picker-cell:not(.history-day-picker-disabled):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day:not(.history-day-picker-disabled):focus-within
+  .rdp-day_button,
+.history-day-picker
+  .history-day-picker-cell:not(.history-day-picker-disabled):focus-within
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover,
+.history-day-picker
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover,
+.history-day-picker
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):focus-visible,
+.history-day-picker
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):focus-visible {
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.history-day-picker
+  .rdp-day:not(.history-day-picker-disabled):hover
+  .rdp-day_button::before,
+.history-day-picker
+  .history-day-picker-cell:not(.history-day-picker-disabled):hover
+  .history-day-picker-day::before,
+.history-day-picker
+  .rdp-day:not(.history-day-picker-disabled):focus-within
+  .rdp-day_button::before,
+.history-day-picker
+  .history-day-picker-cell:not(.history-day-picker-disabled):focus-within
+  .history-day-picker-day::before,
+.history-day-picker
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover::before,
+.history-day-picker
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover::before,
+.history-day-picker
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):focus-visible::before,
+.history-day-picker
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):focus-visible::before {
+  content: "";
+  position: absolute;
+  left: -18%;
+  top: -22%;
+  z-index: 0;
+  width: 1.45rem;
+  height: 2px;
+  pointer-events: none;
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      circle at 96% 50%,
+      #ffffff 0%,
+      rgba(254, 240, 138, 0.95) 32%,
+      transparent 68%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(251, 191, 36, 0) 15%,
+      rgba(251, 191, 36, 0.28) 42%,
+      rgba(255, 255, 255, 0.82) 86%,
+      #ffffff 100%
+    );
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 7px rgba(253, 224, 71, 0.5));
+  transform: rotate(38deg);
+  transform-origin: center center;
+  animation: history-day-meteor-shower 3s ease-in infinite;
+}
+
+/* 공통 hover — day 셀 기준 */
+.history-day-picker
+  .rdp-day:not(.history-day-picker-disabled):hover
+  .rdp-day_button,
+.history-day-picker
+  .history-day-picker-cell:not(.history-day-picker-disabled):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day:not(.history-day-picker-disabled):focus-within
+  .rdp-day_button,
+.history-day-picker
+  .history-day-picker-cell:not(.history-day-picker-disabled):focus-within
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day:not(.history-day-picker-disabled):hover
+  .history-day-picker-day,
+.history-day-picker
+  .history-day-picker-cell:not(.history-day-picker-disabled):hover
+  .rdp-day_button {
+  transition: none;
+  border: none;
+  z-index: 2;
+  cursor: pointer;
+  transform: scale(1.1);
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.42);
+  animation: history-day-picker-hover-pulse 0.28s ease-in-out infinite alternate;
+}
+
+/* 버튼 직접 hover fallback */
+.history-day-picker
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover,
+.history-day-picker
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover,
+.history-day-picker
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):focus-visible,
+.history-day-picker
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):focus-visible {
+  transition: none;
+  border: none;
+  z-index: 2;
+  cursor: pointer;
+  transform: scale(1.1);
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.42);
+  animation: history-day-picker-hover-pulse 0.28s ease-in-out infinite alternate;
+}
+
+.history-day-picker-selected:not(.history-day-picker-disabled)
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover,
+.history-day-picker-selected:not(.history-day-picker-disabled)
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover,
+.history-day-picker-selected:not(.history-day-picker-disabled)
+  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):focus-visible,
+.history-day-picker-selected:not(.history-day-picker-disabled)
+  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):focus-visible {
+  background: #141c4a;
+  color: #ffffff;
+  animation: history-day-picker-selected-pulse 0.28s ease-in-out infinite alternate;
+}
+
+.history-day-picker
+  .rdp-day.history-day-picker-selected:not(.history-day-picker-disabled):hover
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-selected:not(.history-day-picker-disabled):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day.history-day-picker-selected:not(
+    .history-day-picker-disabled
+  ):focus-within
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-selected:not(
+    .history-day-picker-disabled
+  ):focus-within
+  .history-day-picker-day {
+  background: #141c4a;
+  color: #ffffff;
+  animation: history-day-picker-selected-pulse 0.28s ease-in-out infinite alternate;
 }
 
 .history-day-picker .rdp-day_button::before,
 .history-day-picker-day::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: -1;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background-color: transparent;
-  transform: translate(-50%, -50%) scale(0.7);
-  transform-origin: center center;
-  transition:
-    transform 0.34s cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 0.28s ease-out;
+  content: none;
+}
+
+.history-day-picker .rdp-day_button::after,
+.history-day-picker-day::after {
+  z-index: 2;
 }
 
 .history-day-picker
-  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled)
-  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover,
+  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled):hover
+  .rdp-day_button,
 .history-day-picker
-  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled)
-  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover {
-  color: #171717;
-  border-color: transparent;
+  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled):focus-within
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled):focus-within
+  .history-day-picker-day {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .history-day-picker
-  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled)
-  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover::before,
+  .rdp-day.history-day-picker-sunday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):hover
+  .rdp-day_button,
 .history-day-picker
-  .rdp-day:not(.history-day-picker-selected):not(.history-day-picker-disabled)
-  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover::before {
-  background-color: #d4d4d8;
-  transform: translate(-50%, -50%) scale(1.12);
+  .rdp-day.history-day-picker-sunday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day.history-day-picker-holiday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):hover
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-holiday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day.history-day-picker-sunday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):focus-within
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-sunday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):focus-within
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day.history-day-picker-holiday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):focus-within
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-holiday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):focus-within
+  .history-day-picker-day {
+  color: #fee2e2;
+  background: rgba(239, 68, 68, 0.32);
 }
 
-.history-day-picker-selected .rdp-day_button,
-.history-day-picker-selected .history-day-picker-day {
+.history-day-picker
+  .rdp-day.history-day-picker-saturday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):hover
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-saturday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day.history-day-picker-saturday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):focus-within
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-saturday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):focus-within
+  .history-day-picker-day {
+  color: #fef3c7;
+  background: rgba(245, 158, 11, 0.34);
+}
+
+.history-day-picker-selected:not(.history-day-picker-disabled) .rdp-day_button,
+.history-day-picker-selected:not(.history-day-picker-disabled)
+  .history-day-picker-day {
   font-family: var(--font-doc-translation-bold), var(--font-sans), sans-serif;
   font-weight: 700;
-  background-color: #0a1030;
-  color: #eef2ff;
-  border: 2px solid #0a1030;
-  transform: scale(1);
+  background: #0a1030;
+  color: #e0e7ff;
+  border: none;
+  transform: none;
+  box-shadow: none;
+  cursor: pointer;
 }
 
 .history-day-picker-selected .rdp-day_button::before,
@@ -675,27 +1139,13 @@ select:disabled {
   content: none;
 }
 
-.history-day-picker-selected .rdp-day_button:hover,
-.history-day-picker-selected .history-day-picker-day:hover {
-  transform: scale(1);
-  background-color: #0a1030;
-  color: #eef2ff;
-  border-color: #0a1030;
-}
-
-.history-day-picker-today:not(.history-day-picker-selected):not(
-    .history-day-picker-sunday
-  ):not(.history-day-picker-saturday):not(.history-day-picker-holiday)
-  .rdp-day_button,
-.history-day-picker-today:not(.history-day-picker-selected):not(
-    .history-day-picker-sunday
-  ):not(.history-day-picker-saturday):not(.history-day-picker-holiday)
+.history-day-picker-today:not(.history-day-picker-selected) .rdp-day_button,
+.history-day-picker-today:not(.history-day-picker-selected)
   .history-day-picker-day {
-  border-color: rgba(49, 46, 129, 0.45);
-  color: #312e81;
-  transition:
-    color 0.28s ease-out,
-    border-color 0.28s ease-out;
+  background: rgba(254, 240, 138, 0.92);
+  border: none;
+  color: #713f12;
+  box-shadow: none;
 }
 
 .history-day-picker-today.history-day-picker-sunday:not(
@@ -714,8 +1164,10 @@ select:disabled {
     .history-day-picker-selected
   )
   .history-day-picker-day {
-  border-color: rgba(220, 38, 38, 0.45);
-  color: #dc2626;
+  background: rgba(254, 240, 138, 0.92);
+  border: none;
+  color: #991b1b;
+  box-shadow: none;
 }
 
 .history-day-picker-today.history-day-picker-saturday:not(
@@ -726,39 +1178,390 @@ select:disabled {
     .history-day-picker-selected
   )
   .history-day-picker-day {
-  border-color: rgba(120, 53, 15, 0.45);
+  background: rgba(254, 240, 138, 0.92);
+  border: none;
   color: #78350f;
+  box-shadow: none;
 }
 
-.history-day-picker-today:not(.history-day-picker-selected)
-  .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover,
-.history-day-picker-today:not(.history-day-picker-selected)
-  .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover {
-  color: #171717;
-  border-color: transparent;
+.history-day-picker
+  .rdp-day.history-day-picker-today:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):hover
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-today:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day.history-day-picker-today:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):focus-within
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-today:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  ):focus-within
+  .history-day-picker-day {
+  color: #451a03;
+  background: rgba(253, 224, 71, 0.96);
+}
+
+.history-day-picker
+  .rdp-day.history-day-picker-today.history-day-picker-sunday:not(
+    .history-day-picker-selected
+  ):not(.history-day-picker-disabled):hover
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-today.history-day-picker-sunday:not(
+    .history-day-picker-selected
+  ):not(.history-day-picker-disabled):hover
+  .history-day-picker-day,
+.history-day-picker
+  .rdp-day.history-day-picker-today.history-day-picker-holiday:not(
+    .history-day-picker-selected
+  ):not(.history-day-picker-disabled):hover
+  .rdp-day_button,
+.history-day-picker
+  .rdp-day.history-day-picker-today.history-day-picker-holiday:not(
+    .history-day-picker-selected
+  ):not(.history-day-picker-disabled):hover
+  .history-day-picker-day {
+  color: #991b1b;
+  background: rgba(253, 224, 71, 0.96);
+}
+
+.history-day-picker
+  .rdp-day.history-day-picker-has-history:not(.history-day-picker-disabled):hover
+  .rdp-day_button::after,
+.history-day-picker
+  .rdp-day.history-day-picker-has-history:not(.history-day-picker-disabled):hover
+  .history-day-picker-day::after,
+.history-day-picker
+  .rdp-day.history-day-picker-has-history:not(
+    .history-day-picker-disabled
+  ):focus-within
+  .rdp-day_button::after,
+.history-day-picker
+  .rdp-day.history-day-picker-has-history:not(
+    .history-day-picker-disabled
+  ):focus-within
+  .history-day-picker-day::after {
+  color: #fbbf24;
+  transform: scale(1.15);
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-day-picker
+    .rdp-day_button:not(:disabled):not([aria-disabled="true"]):hover::before,
+  .history-day-picker
+    .history-day-picker-day:not(:disabled):not([aria-disabled="true"]):hover::before,
+  .history-day-picker
+    .rdp-day:not(.history-day-picker-disabled):hover
+    .rdp-day_button::before,
+  .history-day-picker
+    .rdp-day:not(.history-day-picker-disabled):hover
+    .history-day-picker-day::before {
+    animation: none;
+    opacity: 0;
+  }
+
+  .history-day-picker
+    .rdp-day:not(.history-day-picker-disabled):hover
+    .rdp-day_button,
+  .history-day-picker
+    .rdp-day:not(.history-day-picker-disabled):hover
+    .history-day-picker-day,
+  .history-day-picker
+    .rdp-day:not(.history-day-picker-disabled):focus-within
+    .rdp-day_button,
+  .history-day-picker
+    .rdp-day:not(.history-day-picker-disabled):focus-within
+    .history-day-picker-day {
+    animation: none;
+    transform: scale(1.08);
+    box-shadow: 0 0 10px rgba(129, 140, 248, 0.35);
+  }
+}
+
+.history-day-picker-has-history .rdp-day_button::after,
+.history-day-picker-has-history .history-day-picker-day::after {
+  content: "★";
+  position: absolute;
+  top: 0.06rem;
+  right: 0.12rem;
+  font-size: 0.5rem;
+  line-height: 1;
+  color: #d97706;
+  pointer-events: none;
+  transition: none;
+}
+
+.history-day-picker-has-history.history-day-picker-selected
+  .rdp-day_button::after,
+.history-day-picker-has-history.history-day-picker-selected
+  .history-day-picker-day::after {
+  color: #fde68a;
 }
 
 .history-day-picker-disabled .rdp-day_button,
-.history-day-picker-disabled .history-day-picker-day {
-  opacity: 0.35;
+.history-day-picker-disabled .history-day-picker-day,
+.history-day-picker .rdp-day_button:disabled,
+.history-day-picker .history-day-picker-day:disabled,
+.history-day-picker .rdp-day_button[aria-disabled="true"],
+.history-day-picker .history-day-picker-day[aria-disabled="true"] {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(254, 243, 199, 0.28);
+  box-shadow: none;
+  opacity: 1;
+  cursor: default;
+  pointer-events: none;
+  animation: none;
+  transform: none;
 }
 
-.history-day-picker-disabled .rdp-day_button:hover,
-.history-day-picker-disabled .history-day-picker-day:hover {
-  color: #3f3f46;
-}
-
-.history-day-picker-disabled .rdp-day_button:hover::before,
-.history-day-picker-disabled .history-day-picker-day:hover::before {
-  background-color: transparent;
-  transform: translate(-50%, -50%) scale(0.7);
+.history-day-picker-disabled::before,
+.history-day-picker-disabled::after,
+.history-day-picker-disabled:hover::before,
+.history-day-picker-disabled:hover::after,
+.history-day-picker-disabled .rdp-day_button::before,
+.history-day-picker-disabled .history-day-picker-day::before,
+.history-day-picker .rdp-day_button:disabled::before,
+.history-day-picker .history-day-picker-day:disabled::before {
+  content: none;
+  animation: none;
 }
 
 .history-day-picker-outside .history-day-picker-day {
-  opacity: 0.25;
+  opacity: 0.35;
 }
 
 /* 메모장 줄무늬 */
+.doc-reader-layout {
+  overflow-x: visible;
+}
+
+/* 공식 문서 안내 — 배경 별·별똥별 */
+.official-document-notice {
+  isolation: isolate;
+}
+
+.official-document-notice::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 28%, rgba(255, 255, 255, 0.9), transparent 2px),
+    radial-gradient(1px 1px at 28% 72%, rgba(199, 210, 254, 0.85), transparent 1.5px),
+    radial-gradient(1.5px 1.5px at 48% 18%, rgba(255, 255, 255, 0.8), transparent 2px),
+    radial-gradient(1px 1px at 68% 58%, rgba(255, 255, 255, 0.75), transparent 1.5px),
+    radial-gradient(1.5px 1.5px at 84% 34%, rgba(254, 240, 138, 0.85), transparent 2px),
+    radial-gradient(1px 1px at 92% 78%, rgba(255, 255, 255, 0.65), transparent 1.5px);
+  background-size: 120px 96px;
+  opacity: 0.75;
+  animation: official-document-notice-stars 3.2s ease-in-out infinite alternate;
+}
+
+.official-document-notice::after {
+  content: "";
+  position: absolute;
+  left: -18%;
+  top: -22%;
+  z-index: 0;
+  width: 1.35rem;
+  height: 2px;
+  pointer-events: none;
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      circle at 96% 50%,
+      #ffffff 0%,
+      rgba(254, 240, 138, 0.95) 32%,
+      transparent 68%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(251, 191, 36, 0) 15%,
+      rgba(251, 191, 36, 0.28) 42%,
+      rgba(255, 255, 255, 0.82) 86%,
+      #ffffff 100%
+    );
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 7px rgba(253, 224, 71, 0.45));
+  transform: rotate(38deg);
+  transform-origin: center center;
+  animation: official-document-notice-meteor 3.6s ease-in infinite;
+}
+
+@keyframes official-document-notice-stars {
+  0% {
+    opacity: 0.55;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0.9;
+    transform: translateY(2px);
+  }
+}
+
+@keyframes official-document-notice-meteor {
+  0%,
+  100% {
+    left: -18%;
+    top: -22%;
+    opacity: 0;
+  }
+
+  4% {
+    left: -18%;
+    top: -22%;
+    opacity: 1;
+  }
+
+  14% {
+    left: 102%;
+    top: 88%;
+    opacity: 1;
+  }
+
+  18% {
+    left: 102%;
+    top: 88%;
+    opacity: 0;
+  }
+
+  28% {
+    left: 10%;
+    top: -26%;
+    opacity: 0;
+  }
+
+  32% {
+    left: 10%;
+    top: -26%;
+    opacity: 1;
+  }
+
+  42% {
+    left: 108%;
+    top: 90%;
+    opacity: 1;
+  }
+
+  46% {
+    left: 108%;
+    top: 90%;
+    opacity: 0;
+  }
+
+  58% {
+    left: -20%;
+    top: -10%;
+    opacity: 0;
+  }
+
+  62% {
+    left: -20%;
+    top: -10%;
+    opacity: 1;
+  }
+
+  72% {
+    left: 96%;
+    top: 96%;
+    opacity: 1;
+  }
+
+  76% {
+    left: 96%;
+    top: 96%;
+    opacity: 0;
+  }
+}
+
+.doc-reader-main {
+  min-width: 0;
+  padding-inline: 1rem;
+  padding-bottom: 1.5rem;
+  overflow: visible;
+}
+
+.doc-reader-memo-tilt,
+.doc-reader-result-memo-tilt {
+  transform-origin: center top;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: 0;
+  margin-bottom: 1.25rem;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.doc-reader-memo-tilt {
+  transform: rotate(0.55deg);
+  padding: 0.375rem 0.625rem 0.875rem;
+}
+
+.doc-reader-main .doc-reader-memo-tilt:first-child {
+  transform: rotate(-0.45deg);
+}
+
+.doc-reader-result-memo-tilt {
+  transform: rotate(0.55deg);
+  padding: 0.5rem 0.75rem 1rem;
+}
+
+.doc-reader-result-memo-tilt::before {
+  content: "";
+  position: absolute;
+  top: 0.75rem;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  left: 0.75rem;
+  z-index: 0;
+  border-radius: 0.125rem;
+  background-color: #fef3c7;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 1.875rem,
+    rgba(120, 90, 20, 0.1) 1.875rem,
+    rgba(120, 90, 20, 0.1) 1.9375rem
+  );
+  box-shadow: 3px 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.doc-reader-main .memo-lines {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.doc-reader-main .doc-reader-memo-tilt .memo-lines,
+.doc-reader-main .doc-reader-result-memo-tilt .memo-lines {
+  padding: 1.5rem 1.625rem 1.75rem;
+}
+
+.doc-reader-main .translation-content,
+.doc-reader-main .translation-result header,
+.doc-reader-main .translation-result section {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.doc-reader-result-memo-tilt > span[aria-hidden="true"] {
+  z-index: 2;
+}
+
 .memo-lines {
   background-image: repeating-linear-gradient(
     transparent,
@@ -811,12 +1614,64 @@ select:disabled {
   width: 100%;
   flex: 1;
   min-width: 0;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.5rem;
-  min-height: 1.9375rem;
-  padding: 0 0.75rem 0 0;
+  min-height: 2.75rem;
+  padding: 0.4375rem 0.75rem 0.4375rem 0;
   text-align: left;
   transition: background-color 0.15s ease;
+}
+
+.history-memo-item-bullet {
+  margin-top: 0.2rem;
+}
+
+.history-memo-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.history-memo-item-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.625rem;
+  width: 100%;
+}
+
+.history-memo-item-title {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: rgb(9, 9, 11);
+}
+
+.history-memo-item-time {
+  flex-shrink: 0;
+  align-self: flex-start;
+  white-space: nowrap;
+  font-size: 0.65rem;
+  line-height: 1.35;
+  color: rgba(180, 83, 9, 0.72);
+}
+
+.history-memo-item-url {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: rgba(120, 53, 15, 0.72);
 }
 
 .history-memo-delete-btn {
@@ -879,10 +1734,99 @@ select:disabled {
 }
 
 .history-memo-calendar {
-  border-style: dashed;
-  border-color: rgba(217, 119, 6, 0.45);
-  background-color: rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 4px 20px rgba(7, 11, 34, 0.2);
+  overflow: visible;
+}
+
+.history-sidebar-panel {
+  border-color: rgba(199, 210, 254, 0.28);
+  background: rgba(10, 16, 48, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.history-sidebar-panel.memo-lines {
+  background-image:
+    repeating-linear-gradient(
+      transparent,
+      transparent 1.875rem,
+      rgba(255, 255, 255, 0.04) 1.875rem,
+      rgba(255, 255, 255, 0.04) 1.9375rem
+    ),
+    linear-gradient(rgba(10, 16, 48, 0.18), rgba(10, 16, 48, 0.18));
+}
+
+.history-sidebar-header {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  background: transparent;
+}
+
+.history-sidebar-panel .history-memo-header h2 {
+  color: rgba(254, 243, 199, 0.96);
+}
+
+.history-sidebar-panel .history-memo-header .font-doc-aux {
+  color: rgba(226, 232, 240, 0.82);
+}
+
+.history-sidebar-panel .history-memo-list {
+  background-color: #fffbeb;
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 1.875rem,
+    rgba(120, 90, 20, 0.16) 1.875rem,
+    rgba(120, 90, 20, 0.16) 1.9375rem
+  );
+  border-top: 1px dashed rgba(217, 119, 6, 0.28);
+}
+
+.history-sidebar-panel .history-memo-pagination {
+  background: rgba(255, 251, 235, 0.88);
+}
+
+.history-calendar-caption {
+  color: rgba(254, 243, 199, 0.96);
+}
+
+.history-calendar-weekday {
+  color: rgba(226, 232, 240, 0.78);
+}
+
+.history-sidebar-panel .history-day-picker .rdp-weekday:nth-child(1) {
+  color: #f87171;
+  font-weight: 700;
+}
+
+.history-sidebar-panel .history-day-picker .rdp-weekday:nth-child(7) {
+  color: #fde68a;
+}
+
+.history-sidebar-panel
+  .history-day-picker-sunday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .history-day-picker-day,
+.history-sidebar-panel
+  .history-day-picker-holiday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .history-day-picker-day {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.history-sidebar-panel
+  .history-day-picker-saturday:not(.history-day-picker-selected):not(
+    .history-day-picker-disabled
+  )
+  .history-day-picker-day {
+  color: #fde68a;
 }
 
 .history-memo-pagination {
@@ -911,3 +1855,659 @@ select:disabled {
 .history-memo-pagination-btn:disabled {
   opacity: 0.4;
 }
+
+/* 번역 결과 북마크 */
+.translation-bookmark-btn {
+  color: rgba(146, 64, 14, 0.45);
+}
+
+.translation-bookmark-btn:hover:not(:disabled),
+.translation-bookmark-btn.is-bookmarked {
+  color: #78350f;
+}
+
+.translation-bookmark-icon-wrap {
+  transform: rotate(-12deg);
+  transition: transform 0.2s ease;
+}
+
+.translation-bookmark-btn:hover:not(:disabled) .translation-bookmark-icon-wrap,
+.translation-bookmark-btn.is-bookmarked .translation-bookmark-icon-wrap {
+  transform: rotate(-6deg) scale(1.1);
+}
+
+.translation-bookmark-icon path {
+  fill: none;
+  stroke: currentColor;
+  transition:
+    fill 0.25s ease,
+    stroke 0.25s ease,
+    filter 0.25s ease;
+}
+
+.translation-bookmark-btn:hover:not(:disabled) .translation-bookmark-icon path {
+  animation: bookmark-icon-shimmer 1.4s ease-in-out infinite;
+}
+
+.translation-bookmark-btn.is-bookmarked .translation-bookmark-icon path {
+  fill: currentColor;
+  stroke: currentColor;
+  animation: bookmark-icon-shimmer 1.4s ease-in-out infinite;
+}
+
+.bookmark-spark {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  color: #fbbf24;
+  font-size: 0.55rem;
+  line-height: 1;
+  text-shadow: 0 0 4px rgba(251, 191, 36, 0.8);
+}
+
+.translation-bookmark-btn:hover:not(:disabled) .bookmark-spark,
+.translation-bookmark-btn.is-bookmarked .bookmark-spark {
+  animation: bookmark-spark-twinkle 1.1s ease-in-out infinite;
+}
+
+.bookmark-spark--1 {
+  top: -3px;
+  right: -1px;
+  animation-delay: 0s;
+}
+
+.bookmark-spark--2 {
+  top: 4px;
+  left: -5px;
+  font-size: 0.4rem;
+  animation-delay: 0.35s;
+}
+
+.bookmark-spark--3 {
+  bottom: -1px;
+  right: -4px;
+  font-size: 0.65rem;
+  animation-delay: 0.65s;
+}
+
+@keyframes bookmark-spark-twinkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.35) rotate(0deg);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1.15) rotate(18deg);
+  }
+
+  70% {
+    opacity: 0.55;
+    transform: scale(0.85) rotate(-8deg);
+  }
+}
+
+@keyframes bookmark-icon-shimmer {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 1px rgba(251, 191, 36, 0.25));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 7px rgba(251, 191, 36, 0.75));
+  }
+}
+
+/* ── 북마크 페이지 (메모지 스타일 + 가독성) ── */
+
+.bookmarks-page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  text-align: center;
+}
+
+.bookmarks-workspace .history-memo-item-title {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: rgb(9, 9, 11);
+}
+
+.bookmarks-workspace .history-memo-item-time {
+  font-size: 0.75rem;
+  color: rgba(120, 53, 15, 0.75);
+}
+
+.bookmarks-workspace .history-memo-item-url {
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: rgba(69, 26, 3, 0.72);
+}
+
+.bookmarks-main {
+  min-height: 24rem;
+}
+
+.bookmarks-placeholder {
+  border-radius: 0.25rem;
+  border: 1px dashed rgba(251, 191, 36, 0.45);
+  background: rgba(255, 251, 235, 0.12);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: rgba(254, 243, 199, 0.92);
+}
+
+.bookmarks-placeholder-edit {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(255, 251, 235, 0.14);
+  color: rgba(254, 243, 199, 0.98);
+}
+
+.bookmarks-placeholder-warn {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(255, 251, 235, 0.95);
+  color: rgba(120, 53, 15, 0.95);
+}
+
+.bookmark-toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border-radius: 0.25rem;
+  border: 1px dashed rgba(180, 83, 9, 0.4);
+  background: rgba(255, 251, 235, 0.95);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(120, 53, 15, 0.95);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.bookmark-toolbar-btn:hover:not(:disabled) {
+  border-color: rgba(180, 83, 9, 0.6);
+  background: rgba(254, 243, 199, 0.98);
+}
+
+.bookmark-toolbar-btn-active {
+  border-color: rgba(99, 102, 241, 0.55);
+  background: rgba(238, 242, 255, 0.98);
+  color: rgba(67, 56, 202, 0.98);
+}
+
+.bookmark-toolbar-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bookmark-toolbar-btn-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+.bookmark-toolbar-btn-icon-only {
+  justify-content: center;
+  padding: 0.4rem;
+}
+
+.bookmark-toolbar-btn-icon-only .bookmark-toolbar-btn-icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.bookmark-folder-toolbar {
+  display: flex;
+  shrink: 0;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.bookmark-folder-edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.65rem;
+  border-radius: 0.25rem;
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  background: rgba(238, 242, 255, 0.55);
+}
+
+.bookmark-folder-edit-guide {
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: rgba(67, 56, 202, 0.92);
+}
+
+.bookmark-folder-edit-empty {
+  padding: 0.75rem 0.35rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: rgba(120, 53, 15, 0.7);
+}
+
+.bookmark-folder-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.bookmark-folder-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.45rem;
+  border-radius: 0.25rem;
+  border: 1px dashed rgba(180, 83, 9, 0.32);
+  background: rgba(255, 251, 235, 0.92);
+  cursor: grab;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.bookmark-folder-edit-row:active {
+  cursor: grabbing;
+}
+
+.bookmark-folder-edit-row-dragging {
+  opacity: 0.45;
+}
+
+.bookmark-folder-edit-row-over {
+  border-color: rgba(99, 102, 241, 0.65);
+  background: rgba(224, 231, 255, 0.9);
+}
+
+.bookmark-folder-edit-grip {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  color: rgba(146, 64, 14, 0.6);
+}
+
+.bookmark-folder-edit-input {
+  min-width: 0;
+  flex: 1;
+  border-radius: 0.2rem;
+  border: 1px solid rgba(180, 83, 9, 0.3);
+  background: rgba(255, 255, 255, 0.98);
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8125rem;
+  color: rgba(69, 26, 3, 0.98);
+  outline: none;
+}
+
+.bookmark-folder-edit-input:focus {
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.bookmark-folder-edit-actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.bookmark-folder-edit-save,
+.bookmark-folder-edit-cancel {
+  flex: 1;
+  border-radius: 0.25rem;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.bookmark-folder-edit-save {
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  background: rgba(238, 242, 255, 0.98);
+  color: rgba(67, 56, 202, 0.98);
+}
+
+.bookmark-folder-edit-cancel {
+  border: 1px solid rgba(180, 83, 9, 0.25);
+  background: rgba(255, 255, 255, 0.92);
+  color: rgba(120, 53, 15, 0.9);
+}
+
+.bookmark-folder-edit-save:disabled,
+.bookmark-folder-edit-cancel:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bookmark-folder-default-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.35rem;
+  color: rgba(67, 56, 202, 0.92);
+  background: rgba(224, 231, 255, 0.92);
+}
+
+.bookmark-folder-zone-icon {
+  flex-shrink: 0;
+  color: rgba(120, 53, 15, 0.82);
+}
+
+.bookmark-folder-zone-icon-wrap {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.bookmark-folder-zone-icon-pinned {
+  color: rgba(67, 56, 202, 0.92);
+}
+
+.bookmark-folder-edit-delete-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.2rem;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(254, 242, 242, 0.98);
+  color: rgba(185, 28, 28, 0.95);
+  padding: 0;
+}
+
+.bookmark-folder-edit-delete-icon {
+  display: block;
+}
+
+.bookmark-folder-edit-delete-btn:hover {
+  background: rgba(254, 226, 226, 1);
+  border-color: rgba(220, 38, 38, 0.5);
+}
+
+.bookmark-folder-delete-cancel,
+.bookmark-folder-delete-confirm {
+  min-width: 5.5rem;
+  border-radius: 0.25rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.bookmark-folder-delete-cancel {
+  border: 1px solid rgba(180, 83, 9, 0.28);
+  background: rgba(255, 255, 255, 0.95);
+  color: rgba(82, 82, 82, 0.95);
+}
+
+.bookmark-folder-delete-confirm {
+  border: 1px solid rgba(220, 38, 38, 0.4);
+  background: rgba(220, 38, 38, 0.95);
+  color: white;
+}
+
+.bookmark-folder-delete-confirm:hover {
+  background: rgba(185, 28, 28, 0.98);
+}
+
+.bookmark-folder-edit-delete {
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 0.2rem;
+  border: 1px solid rgba(180, 83, 9, 0.28);
+  background: rgba(255, 255, 255, 0.92);
+  color: rgba(146, 64, 14, 0.8);
+  line-height: 1;
+}
+
+.bookmark-folder-edit-delete:hover {
+  background: rgba(254, 226, 226, 0.98);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: rgba(185, 28, 28, 0.95);
+}
+
+.bookmark-folder-zone-badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 0.08rem 0.4rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: rgba(67, 56, 202, 0.92);
+  background: rgba(224, 231, 255, 0.92);
+}
+
+.bookmark-folder-zone-readonly {
+  opacity: 0.92;
+}
+
+.bookmark-create-folder-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border-radius: 0.25rem;
+  border: 1px dashed rgba(180, 83, 9, 0.38);
+  background: rgba(255, 251, 235, 0.82);
+}
+
+.bookmark-create-folder-input {
+  width: 100%;
+  border-radius: 0.2rem;
+  border: 1px solid rgba(180, 83, 9, 0.3);
+  background: rgba(255, 255, 255, 0.98);
+  padding: 0.5rem 0.6rem;
+  font-size: 0.8125rem;
+  color: rgba(69, 26, 3, 0.98);
+  outline: none;
+}
+
+.bookmark-create-folder-input:focus {
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.bookmark-create-folder-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.bookmark-create-folder-submit,
+.bookmark-create-folder-cancel {
+  flex: 1;
+  border-radius: 0.25rem;
+  padding: 0.4rem 0.55rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.bookmark-create-folder-submit {
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  background: rgba(238, 242, 255, 0.98);
+  color: rgba(67, 56, 202, 0.98);
+}
+
+.bookmark-create-folder-submit:hover:not(:disabled) {
+  background: rgba(224, 231, 255, 1);
+}
+
+.bookmark-create-folder-cancel {
+  border: 1px solid rgba(180, 83, 9, 0.25);
+  background: rgba(255, 255, 255, 0.88);
+  color: rgba(120, 53, 15, 0.9);
+}
+
+.bookmark-create-folder-submit:disabled,
+.bookmark-create-folder-cancel:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bookmark-folder-stack {
+  min-height: 0;
+}
+
+.bookmark-folder-zone {
+  border-radius: 0.25rem;
+  border: 1px dashed rgba(180, 83, 9, 0.32);
+  background: #fef3c7;
+  padding: 0.5rem 0.35rem 0.4rem;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.bookmark-folder-zone-active {
+  border-color: rgba(99, 102, 241, 0.65);
+  background: #e0e7ff;
+  box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.15);
+}
+
+.bookmark-folder-zone-header {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.35rem 0.45rem;
+  border: none;
+  border-bottom: 1px dashed rgba(180, 83, 9, 0.22);
+  margin-bottom: 0;
+  background: #fef3c7;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.bookmark-folder-zone-header:hover {
+  background: #fde68a;
+}
+
+.bookmark-folder-zone-active .bookmark-folder-zone-header {
+  background: #e0e7ff;
+}
+
+.bookmark-folder-zone-active .bookmark-folder-zone-header:hover {
+  background: #c7d2fe;
+}
+
+.bookmark-folder-zone-collapsed .bookmark-folder-zone-header {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0.4rem;
+}
+
+.bookmark-folder-zone-chevron {
+  flex-shrink: 0;
+  font-size: 0.625rem;
+  color: rgba(146, 64, 14, 0.65);
+  transition: transform 0.15s ease;
+}
+
+.bookmark-folder-zone-chevron-expanded {
+  transform: rotate(90deg);
+}
+
+.bookmark-folder-zone-body {
+  padding-top: 0.25rem;
+}
+
+.bookmark-folder-zone-drop-hint {
+  padding: 0.35rem 0.5rem 0.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: rgba(67, 56, 202, 0.92);
+}
+
+.bookmark-folder-zone-title {
+  min-width: 0;
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgba(69, 26, 3, 0.98);
+}
+
+.bookmark-folder-zone-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(120, 53, 15, 0.72);
+}
+
+.bookmark-folder-zone-empty {
+  padding: 0.75rem 0.5rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: rgba(120, 53, 15, 0.65);
+}
+
+.bookmark-folder-zone-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.bookmark-memo-item-row {
+  cursor: grab;
+}
+
+.bookmark-memo-item-row:active {
+  cursor: grabbing;
+}
+
+.bookmark-memo-item-row-dragging {
+  opacity: 0.45;
+}
+
+.bookmark-memo-item-row-moving {
+  opacity: 0.65;
+}
+
+.bookmark-memo-item {
+  width: 100%;
+}
+
+.bookmark-memo-grip {
+  align-self: flex-start;
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
+  cursor: grab;
+}
+
+.bookmark-memo-item-row .history-memo-item {
+  gap: 0.4rem;
+  padding-right: 0.35rem;
+}
+
+/* 북마크 우측 번역 — 메모지 유지, 기울기만 제거 + 글자 가독성 */
+.bookmarks-reader-panel .translation-result {
+  transform: none;
+}
+
+.bookmarks-reader-panel .translation-result h2,
+.bookmarks-reader-panel .translation-result-title-link {
+  font-size: 1.625rem;
+  line-height: 1.45;
+  color: rgb(9, 9, 11);
+}
+
+.bookmarks-reader-panel .translation-result-title-link:hover,
+.bookmarks-reader-panel .translation-result-title-link:focus-visible {
+  color: transparent;
+}
+
+.bookmarks-reader-panel .translation-result h3 {
+  font-size: 0.9375rem;
+  color: rgba(69, 26, 3, 0.95);
+}
+
+.bookmarks-reader-panel .translation-result a:not(.translation-result-title-link) {
+  font-size: 0.8125rem;
+}
+
+.bookmarks-reader-panel .translation-result > div {
+  padding: 1.5rem 1.625rem;
+}
+

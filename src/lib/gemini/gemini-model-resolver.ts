@@ -1,4 +1,10 @@
-import { GEMINI_AUTO_MODEL_PRIORITY } from "@/constants/gemini";
+import { createHash } from "node:crypto";
+import {
+  buildPinnedGeminiModelCandidates,
+  buildStaticGeminiModelFallback,
+  GEMINI_MODEL_POLICY,
+  GEMINI_PREFERRED_MODELS,
+} from "@/constants/gemini";
 
 interface GeminiModelListResponse {
   models?: Array<{
@@ -12,8 +18,11 @@ interface ModelCacheEntry {
   expiresAt: number;
 }
 
-const MODEL_CACHE_TTL_MS = 60 * 60 * 1000;
 const modelCache = new Map<string, ModelCacheEntry>();
+
+const getApiKeyCacheKey = (apiKey: string): string => {
+  return createHash("sha256").update(apiKey).digest("hex").slice(0, 16);
+};
 
 const extractModelId = (modelName: string): string => {
   return modelName.replace(/^models\//, "");
@@ -21,6 +30,7 @@ const extractModelId = (modelName: string): string => {
 
 const isDeprecatedModel = (modelId: string): boolean => {
   const loweredModelId = modelId.toLowerCase();
+
   return (
     loweredModelId.includes("gemini-2.0") ||
     loweredModelId.includes("gemini-1.5") ||
@@ -45,8 +55,8 @@ const scoreModel = (modelId: string): number => {
     return -1000;
   }
 
-  const priorityIndex = GEMINI_AUTO_MODEL_PRIORITY.indexOf(
-    modelId as (typeof GEMINI_AUTO_MODEL_PRIORITY)[number],
+  const priorityIndex = GEMINI_PREFERRED_MODELS.indexOf(
+    modelId as (typeof GEMINI_PREFERRED_MODELS)[number],
   );
 
   if (priorityIndex >= 0) {
@@ -71,25 +81,30 @@ const scoreModel = (modelId: string): number => {
 };
 
 const sortModels = (modelIds: string[]): string[] => {
-  return [...new Set(modelIds)].sort((left, right) => scoreModel(right) - scoreModel(left));
+  return [...new Set(modelIds)].sort(
+    (left, right) => scoreModel(right) - scoreModel(left),
+  );
 };
 
-const getCachedModels = (apiKey: string): string[] | null => {
-  const cachedEntry = modelCache.get(apiKey);
-  if (!cachedEntry) return null;
+const getCachedModels = (cacheKey: string): string[] | null => {
+  const cachedEntry = modelCache.get(cacheKey);
+
+  if (!cachedEntry) {
+    return null;
+  }
 
   if (cachedEntry.expiresAt <= Date.now()) {
-    modelCache.delete(apiKey);
+    modelCache.delete(cacheKey);
     return null;
   }
 
   return cachedEntry.models;
 };
 
-const setCachedModels = (apiKey: string, models: string[]): void => {
-  modelCache.set(apiKey, {
+const setCachedModels = (cacheKey: string, models: string[]): void => {
+  modelCache.set(cacheKey, {
     models,
-    expiresAt: Date.now() + MODEL_CACHE_TTL_MS,
+    expiresAt: Date.now() + GEMINI_MODEL_POLICY.modelCacheTtlMs,
   });
 };
 
@@ -116,7 +131,16 @@ const fetchAvailableModels = async (apiKey: string): Promise<string[]> => {
 };
 
 export const resolveAutoGeminiModels = async (apiKey: string): Promise<string[]> => {
-  const cachedModels = getCachedModels(apiKey);
+  const cacheKey = getApiKeyCacheKey(apiKey);
+  const pinnedModels = buildPinnedGeminiModelCandidates();
+
+  if (pinnedModels.length > 0) {
+    setCachedModels(cacheKey, pinnedModels);
+    return pinnedModels;
+  }
+
+  const cachedModels = getCachedModels(cacheKey);
+
   if (cachedModels?.length) {
     return cachedModels;
   }
@@ -125,7 +149,7 @@ export const resolveAutoGeminiModels = async (apiKey: string): Promise<string[]>
     const discoveredModels = await fetchAvailableModels(apiKey);
 
     if (discoveredModels.length > 0) {
-      setCachedModels(apiKey, discoveredModels);
+      setCachedModels(cacheKey, discoveredModels);
       return discoveredModels;
     }
   } catch (error) {
@@ -135,7 +159,7 @@ export const resolveAutoGeminiModels = async (apiKey: string): Promise<string[]>
     );
   }
 
-  const fallbackModels = [...GEMINI_AUTO_MODEL_PRIORITY];
-  setCachedModels(apiKey, fallbackModels);
+  const fallbackModels = buildStaticGeminiModelFallback();
+  setCachedModels(cacheKey, fallbackModels);
   return fallbackModels;
 };

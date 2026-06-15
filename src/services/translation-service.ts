@@ -8,8 +8,14 @@ import {
   normalizeDocumentUrl,
 } from "@/lib/document/normalize-document-url";
 import { toPublicDocumentUrl } from "@/lib/document/text-document-url";
+import { parseStoredDocumentImages } from "@/lib/document/parse-document-images";
+import { buildTranslationHistorySummary } from "@/lib/translation/build-history-summary";
+import { translateDocumentTitle } from "@/lib/translation/translate-document-title";
+import { rehydrateDocumentImagesFromUrl } from "@/lib/translation/rehydrate-translation-images";
+import { shouldPersistTranslation } from "@/lib/translation/should-persist-translation";
 import { getTranslationDayRange } from "@/lib/translation/translation-day-range";
 import {
+  getHistoryMinDateKey,
   isValidHistoryDateKey,
 } from "@/lib/translation/translation-history-date";
 import { HISTORY_PAGE_SIZE } from "@/constants/translation-history";
@@ -69,21 +75,41 @@ const resolveDocumentRow = (
 
 const mapHistoryItem = (row: TranslationRow): TranslationHistoryItem => {
   const document = resolveDocumentRow(row.documents);
+  const title = translateDocumentTitle(document?.title ?? "제목 없음");
+  const url = document?.url
+    ? toPublicDocumentUrl(normalizeDocumentUrl(document.url))
+    : null;
+  const summaryTerms = row.summary_terms ?? [];
 
   return {
     id: row.id,
     documentId: row.document_id,
-    title: document?.title ?? "제목 없음",
-    url: document?.url
-      ? toPublicDocumentUrl(normalizeDocumentUrl(document.url))
-      : null,
+    title,
+    url,
+    historySummary: buildTranslationHistorySummary({
+      title,
+      url,
+      summaryTerms,
+    }),
     originalContent: row.original_content,
     translatedContent: row.content,
-    summaryTerms: row.summary_terms ?? [],
-    documentImages: row.document_images ?? [],
+    summaryTerms,
+    documentImages: parseStoredDocumentImages(row.document_images),
     documentCodeBlocks: row.document_code_blocks ?? [],
     createdAt: row.created_at,
   };
+};
+
+const isValidHistoryItem = (item: TranslationHistoryItem): boolean => {
+  if (!item.translatedContent.trim()) {
+    return false;
+  }
+
+  if (!item.originalContent) {
+    return true;
+  }
+
+  return shouldPersistTranslation(item.originalContent, item.translatedContent);
 };
 
 const dedupeHistoryByPageKey = (
@@ -142,6 +168,7 @@ export const saveTranslation = async ({
 
   const canonicalUrl = normalizeDocumentUrl(url);
   const existingDocument = await findDocumentByPageKey(supabase, url);
+  const translatedTitle = translateDocumentTitle(title);
 
   let documentRow: DocumentRow | null = null;
 
@@ -150,7 +177,7 @@ export const saveTranslation = async ({
       .from("documents")
       .update({
         url: canonicalUrl,
-        title,
+        title: translatedTitle,
       })
       .eq("id", existingDocument.id)
       .select("id, title, url")
@@ -169,7 +196,7 @@ export const saveTranslation = async ({
       .upsert(
         {
           url: canonicalUrl,
-          title,
+          title: translatedTitle,
         },
         { onConflict: "url" },
       )
@@ -198,25 +225,16 @@ export const saveTranslation = async ({
     .maybeSingle();
 
   const persistTranslation = async (
-    includeExtendedColumns: boolean,
+    extendedPayload: Record<string, unknown>,
   ): Promise<{ id: string; created_at: string } | null> => {
-    const basePayload = {
+    const payload = {
       user_id: userId,
       document_id: documentRow.id,
       content: translatedContent,
       source_lang: "en",
       target_lang: "ko",
+      ...extendedPayload,
     };
-
-    const payload = includeExtendedColumns
-      ? {
-          ...basePayload,
-          summary_terms: summaryTerms,
-          original_content: originalContent,
-          document_images: documentImages,
-          document_code_blocks: documentCodeBlocks,
-        }
-      : basePayload;
 
     if (existingTodayTranslation) {
       const { data, error } = await supabase
@@ -248,10 +266,33 @@ export const saveTranslation = async ({
     return data;
   };
 
-  let translationRow = await persistTranslation(true);
+  const extendedPayloadAttempts: Record<string, unknown>[] = [
+    {
+      summary_terms: summaryTerms,
+      original_content: originalContent,
+      document_images: documentImages,
+      document_code_blocks: documentCodeBlocks,
+    },
+    {
+      summary_terms: summaryTerms,
+      original_content: originalContent,
+      document_images: documentImages,
+    },
+    {
+      summary_terms: summaryTerms,
+      original_content: originalContent,
+    },
+    {},
+  ];
 
-  if (!translationRow) {
-    translationRow = await persistTranslation(false);
+  let translationRow: { id: string; created_at: string } | null = null;
+
+  for (const extendedPayload of extendedPayloadAttempts) {
+    translationRow = await persistTranslation(extendedPayload);
+
+    if (translationRow) {
+      break;
+    }
   }
 
   if (!translationRow) {
@@ -263,7 +304,7 @@ export const saveTranslation = async ({
   return {
     id: translationRow.id,
     documentId: documentRow.id,
-    title: documentRow.title ?? title,
+    title: documentRow.title ?? translatedTitle,
     url: toPublicDocumentUrl(documentRow.url),
     originalContent,
     translatedContent,
@@ -271,6 +312,34 @@ export const saveTranslation = async ({
     documentImages,
     documentCodeBlocks,
     createdAt: translationRow.created_at,
+  };
+};
+
+const buildLocalTranslationResult = (
+  localId: string,
+  refinedDocument: {
+    title: string;
+    url: string;
+    originalContent: string;
+  },
+  processedDocument: {
+    translatedContent: string;
+    summaryTerms: KeywordTerm[];
+    documentImages: DocumentImage[];
+    documentCodeBlocks: DocumentCodeBlock[];
+  },
+): DocumentTranslationResult => {
+  return {
+    id: localId,
+    documentId: localId,
+    title: translateDocumentTitle(refinedDocument.title),
+    url: toPublicDocumentUrl(refinedDocument.url),
+    originalContent: refinedDocument.originalContent,
+    translatedContent: processedDocument.translatedContent,
+    summaryTerms: processedDocument.summaryTerms,
+    documentImages: processedDocument.documentImages,
+    documentCodeBlocks: processedDocument.documentCodeBlocks,
+    createdAt: new Date().toISOString(),
   };
 };
 
@@ -305,19 +374,33 @@ const translateRefinedDocument = async (
   const { translatedContent, summaryTerms, documentImages, documentCodeBlocks } =
     processedDocument;
 
+  if (!translatedContent.trim()) {
+    throw new TranslationError(
+      "DOCUMENT_EMPTY",
+      "번역 결과가 없어 히스토리에 저장하지 않았습니다.",
+      "Empty translated content",
+    );
+  }
+
   if (isPaginationDocumentUrl(refinedDocument.url)) {
-    return {
-      id: "local-pagination",
-      documentId: "local-pagination",
-      title: refinedDocument.title,
-      url: toPublicDocumentUrl(refinedDocument.url),
-      originalContent: refinedDocument.originalContent,
+    return buildLocalTranslationResult(
+      "local-pagination",
+      refinedDocument,
+      processedDocument,
+    );
+  }
+
+  if (
+    !shouldPersistTranslation(
+      refinedDocument.originalContent,
       translatedContent,
-      summaryTerms,
-      documentImages,
-      documentCodeBlocks,
-      createdAt: new Date().toISOString(),
-    };
+    )
+  ) {
+    return buildLocalTranslationResult(
+      "local-untranslated",
+      refinedDocument,
+      processedDocument,
+    );
   }
 
   return saveTranslation({
@@ -457,7 +540,9 @@ export const getTranslationHistory = async (
     const totalPages = Math.max(1, Math.ceil(fullResult.totalCount / pageSize));
 
     return {
-      items: dedupeHistoryByPageKey(fullResult.rows.map(mapHistoryItem)),
+      items: dedupeHistoryByPageKey(
+        fullResult.rows.map(mapHistoryItem).filter(isValidHistoryItem),
+      ),
       totalCount: fullResult.totalCount,
       page,
       pageSize,
@@ -486,15 +571,17 @@ export const getTranslationHistory = async (
 
     return {
       items: dedupeHistoryByPageKey(
-        legacyResult.rows.map((row) =>
-          mapHistoryItem({
-            ...row,
-            original_content: null,
-            summary_terms: [],
-            document_images: [],
-            document_code_blocks: [],
-          } as TranslationRow),
-        ),
+        legacyResult.rows
+          .map((row) =>
+            mapHistoryItem({
+              ...row,
+              original_content: null,
+              summary_terms: [],
+              document_images: [],
+              document_code_blocks: [],
+            } as TranslationRow),
+          )
+          .filter(isValidHistoryItem),
       ),
       totalCount: legacyResult.totalCount,
       page,
@@ -513,25 +600,162 @@ export const getTranslationHistory = async (
   }
 };
 
-export const getTranslationById = async (
+export const getTranslationHistoryDateKeys = async (
   userId: string,
-  translationId: string,
-): Promise<TranslationHistoryItem | null> => {
+): Promise<string[]> => {
   const supabase = getSupabaseAdminClient();
-  if (!supabase) return null;
+
+  if (!supabase) {
+    throw new Error("Supabase 연결이 설정되지 않았습니다.");
+  }
+
+  const minDateKey = getHistoryMinDateKey();
+  const todayRange = getTranslationDayRange();
+  const startIso = `${minDateKey}T00:00:00+09:00`;
 
   const { data, error } = await supabase
     .from("translations")
-    .select(
-      "id, document_id, content, original_content, summary_terms, document_images, document_code_blocks, created_at, documents(id, title, url)",
-    )
+    .select("created_at")
+    .eq("user_id", userId)
+    .gte("created_at", startIso)
+    .lte("created_at", todayRange.endIso);
+
+  if (error) {
+    console.error("[getTranslationHistoryDateKeys]", error.message);
+    throw new Error("번역 히스토리 날짜를 불러오지 못했습니다.");
+  }
+
+  const dateKeys = new Set<string>();
+
+  (data ?? []).forEach((row) => {
+    const dateKey = getTranslationDayRange(new Date(row.created_at)).dateKey;
+
+    if (isValidHistoryDateKey(dateKey)) {
+      dateKeys.add(dateKey);
+    }
+  });
+
+  return [...dateKeys].sort((left, right) => right.localeCompare(left));
+};
+
+const fetchTranslationRowById = async (
+  userId: string,
+  translationId: string,
+  selectClause: string,
+): Promise<TranslationRow | null> => {
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("translations")
+    .select(selectClause)
     .eq("user_id", userId)
     .eq("id", translationId)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) {
+    throw new Error(error.message);
+  }
 
-  return mapHistoryItem(data as unknown as TranslationRow);
+  return (data as unknown as TranslationRow) ?? null;
+};
+
+const mapLegacyTranslationRow = (row: TranslationRow): TranslationHistoryItem => {
+  return mapHistoryItem({
+    ...row,
+    original_content: null,
+    summary_terms: [],
+    document_images: [],
+    document_code_blocks: [],
+  } as TranslationRow);
+};
+
+const enrichTranslationImages = async (
+  userId: string,
+  item: TranslationHistoryItem,
+): Promise<TranslationHistoryItem> => {
+  if (item.documentImages.length > 0 || !item.url) {
+    return item;
+  }
+
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    return item;
+  }
+
+  try {
+    const rehydratedImages = await rehydrateDocumentImagesFromUrl(item.url);
+
+    if (rehydratedImages.length === 0) {
+      return item;
+    }
+
+    const { error: updateError } = await supabase
+      .from("translations")
+      .update({ document_images: rehydratedImages })
+      .eq("id", item.id)
+      .eq("user_id", userId);
+
+    if (updateError) {
+      console.error("[enrichTranslationImages] backfill", updateError.message);
+    }
+
+    return {
+      ...item,
+      documentImages: rehydratedImages,
+    };
+  } catch (rehydrateError) {
+    console.error("[enrichTranslationImages] rehydrate", rehydrateError);
+    return item;
+  }
+};
+
+export const getTranslationById = async (
+  userId: string,
+  translationId: string,
+): Promise<TranslationHistoryItem | null> => {
+  try {
+    const row = await fetchTranslationRowById(
+      userId,
+      translationId,
+      HISTORY_SELECT_FULL,
+    );
+
+    if (!row) {
+      return null;
+    }
+
+    return enrichTranslationImages(userId, mapHistoryItem(row));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+
+    if (!isMissingHistoryColumnError(message)) {
+      console.error("[getTranslationById]", message);
+      return null;
+    }
+  }
+
+  try {
+    const row = await fetchTranslationRowById(
+      userId,
+      translationId,
+      HISTORY_SELECT_LEGACY,
+    );
+
+    if (!row) {
+      return null;
+    }
+
+    return enrichTranslationImages(userId, mapLegacyTranslationRow(row));
+  } catch (legacyError) {
+    const message =
+      legacyError instanceof Error ? legacyError.message : "";
+
+    console.error("[getTranslationById] legacy", message);
+    return null;
+  }
 };
 
 export const deleteTranslation = async (

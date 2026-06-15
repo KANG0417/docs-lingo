@@ -1,3 +1,4 @@
+import { stripInlineMarkupDelimiters, normalizeKeywordDescription } from "@/lib/translation/inline-markup-utils";
 import type { KeywordTerm } from "@/types/translation";
 
 const MAX_SUMMARY_TERMS = 8;
@@ -222,10 +223,10 @@ export const normalizeSummaryTerms = (
 ): KeywordTerm[] => {
   const cleanedTerms = summaryTerms
     .map((item) => {
-      const term = item.term.trim();
-      const description = stripDuplicateTermFromDescription(
+      const term = stripInlineMarkupDelimiters(item.term.trim());
+      const description = normalizeKeywordDescription(
+        stripDuplicateTermFromDescription(term, item.description.trim()),
         term,
-        item.description.trim(),
       );
 
       return {

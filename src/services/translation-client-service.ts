@@ -1,5 +1,7 @@
 import type {
   DocumentTranslationResult,
+  TranslationHistoryDateKeysResponse,
+  TranslationHistoryItem,
   TranslationHistoryQuery,
   TranslationHistoryResponse,
 } from "@/types/translation";
@@ -63,6 +65,35 @@ export const getTranslationHistory = async (
   }
 
   return (await response.json()) as TranslationHistoryResponse;
+};
+
+export const getTranslationHistoryDateKeys =
+  async (): Promise<TranslationHistoryDateKeysResponse> => {
+    const response = await fetch("/api/translations/history/dates", {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      const { message } = (await response.json()) as { message: string };
+      throw new Error(message);
+    }
+
+    return (await response.json()) as TranslationHistoryDateKeysResponse;
+  };
+
+export const getTranslationHistoryItem = async (
+  translationId: string,
+): Promise<TranslationHistoryItem> => {
+  const response = await fetch(`/api/translations/history/${translationId}`, {
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const { message } = (await response.json()) as { message: string };
+    throw new Error(message);
+  }
+
+  return (await response.json()) as TranslationHistoryItem;
 };
 
 export const deleteTranslationHistoryItem = async (

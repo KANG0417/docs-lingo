@@ -1,16 +1,25 @@
 import type { ReactElement } from "react";
 import {
   applyInlineMarkupToSegments,
-  expandSegmentsWithSectionLabels,
   splitTextByHighlights,
+  type TextSegment,
 } from "@/lib/translation/highlight-keywords";
+import {
+  normalizeInlineMarkupSource,
+  stripSectionHeadingMarkup,
+  resolveSectionHeadingText,
+} from "@/lib/translation/inline-markup-utils";
 import { normalizeTranslatedLayout } from "@/lib/translation/normalize-translated-layout";
+import { normalizeTerminologyMarkup } from "@/lib/translation/normalize-terminology-markup";
 import { normalizeSummaryTerms } from "@/lib/translation/summary-terms-normalizer";
 import {
   stripParagraphMarker,
   stripParagraphMarkersFromContent,
 } from "@/lib/translation/strip-paragraph-markers";
-import { splitContentBySections } from "@/lib/translation/translation-section-utils";
+import { TranslationSectionHeading } from "@/components/atoms/text/translation-section-heading";
+import {
+  normalizeTranslationSections,
+} from "@/lib/translation/translation-section-utils";
 import { groupDocumentImagesBySectionIndex } from "@/lib/translation/merge-document-images";
 import { groupDocumentCodeBlocksBySectionIndex } from "@/lib/translation/merge-document-code-blocks";
 import { DocumentImageFigure } from "@/components/molecules/document/document-image-figure";
@@ -25,6 +34,45 @@ interface HighlightedTranslationContentProps {
   documentImages?: DocumentImage[];
   documentCodeBlocks?: DocumentCodeBlock[];
 }
+
+const renderInlineSegments = (
+  segments: TextSegment[],
+  keyPrefix: string,
+): ReactElement[] => {
+  return segments.map((segment, segmentIndex) => {
+    const segmentKey = `${keyPrefix}-${segmentIndex}`;
+
+    if (segment.type === "keyword") {
+      return (
+        <code key={`keyword-${segmentKey}`} className="keyword-chip">
+          {segment.value}
+        </code>
+      );
+    }
+
+    if (segment.type === "emphasis") {
+      const innerSegments = applyInlineMarkupToSegments([
+        { type: "text", value: segment.value },
+      ]);
+
+      return (
+        <span key={`emphasis-${segmentKey}`} className="emphasis-underline">
+          {renderInlineSegments(innerSegments, `${segmentKey}-inner`)}
+        </span>
+      );
+    }
+
+    if (segment.type === "bold") {
+      return (
+        <strong key={`bold-${segmentKey}`} className="note-highlight">
+          {segment.value}
+        </strong>
+      );
+    }
+
+    return <span key={`text-${segmentKey}`}>{segment.value}</span>;
+  });
+};
 
 const renderHighlightedSegments = (
   paragraph: string,
@@ -42,37 +90,7 @@ const renderHighlightedSegments = (
     return splitTextByHighlights(segment.value, summaryTerms);
   });
 
-  return expandSegmentsWithSectionLabels(segmentsWithKeywords).map(
-    (segment, segmentIndex) => {
-      const segmentKey = `${sectionIndex}-${segmentIndex}`;
-
-      if (segment.type === "keyword") {
-        return (
-          <code key={`keyword-${segmentKey}`} className="keyword-chip">
-            {segment.value}
-          </code>
-        );
-      }
-
-      if (segment.type === "emphasis") {
-        return (
-          <span key={`emphasis-${segmentKey}`} className="emphasis-underline">
-            {segment.value}
-          </span>
-        );
-      }
-
-      if (segment.type === "section-label") {
-        return (
-          <strong key={`section-label-${segmentKey}`} className="section-label">
-            {segment.value}
-          </strong>
-        );
-      }
-
-      return <span key={`text-${segmentKey}`}>{segment.value}</span>;
-    },
-  );
+  return renderInlineSegments(segmentsWithKeywords, String(sectionIndex));
 };
 
 export const HighlightedTranslationContent = ({
@@ -85,15 +103,21 @@ export const HighlightedTranslationContent = ({
   const imagesBySection = groupDocumentImagesBySectionIndex(documentImages);
   const codeBlocksBySection =
     groupDocumentCodeBlocksBySectionIndex(documentCodeBlocks);
-  const sections = splitContentBySections(
-    stripParagraphMarkersFromContent(normalizeTranslatedLayout(content)),
+  const sections = normalizeTranslationSections(
+    normalizeTerminologyMarkup(
+      stripParagraphMarkersFromContent(
+        normalizeTranslatedLayout(normalizeInlineMarkupSource(content)),
+      ),
+    ),
   ).map((section) => ({
-    heading: section.heading ? stripParagraphMarker(section.heading) : null,
+    heading: section.heading
+      ? resolveSectionHeadingText(stripSectionHeadingMarkup(stripParagraphMarker(section.heading)))
+      : null,
     body: stripParagraphMarker(section.body),
   }));
 
   return (
-    <div className="translation-content memo-lines max-h-[28rem] overflow-y-auto pt-1 text-zinc-800">
+    <div className="translation-content pt-1 text-zinc-800">
       {sections.map((section, sectionIndex) => {
         if (!section.heading && !section.body) {
           return null;
@@ -114,9 +138,9 @@ export const HighlightedTranslationContent = ({
             className="translation-section mb-6 last:mb-0"
           >
             {section.heading && (
-              <h4 className="translation-section-heading font-doc-translation-bold mb-2 text-base font-bold text-zinc-900">
+              <TranslationSectionHeading className="mb-2">
                 {section.heading}
-              </h4>
+              </TranslationSectionHeading>
             )}
             {sectionImages.map((image) => (
               <DocumentImageFigure key={image.id} image={image} />

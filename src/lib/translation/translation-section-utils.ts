@@ -1,10 +1,12 @@
+import { stripSectionHeadingMarkup, resolveSectionHeadingText } from "@/lib/translation/inline-markup-utils";
+
 export interface TranslationContentSection {
   heading: string | null;
   body: string;
 }
 
 export const isSectionHeadingLine = (line: string): boolean => {
-  const trimmed = line.trim();
+  const trimmed = resolveSectionHeadingText(line);
 
   if (!trimmed || trimmed.length > 100) {
     return false;
@@ -34,14 +36,57 @@ export const isSectionHeadingLine = (line: string): boolean => {
 
   if (
     /[\u3131-\uD7A3]/.test(trimmed) &&
-    trimmed.length <= 48 &&
-    !/[:：`]/.test(trimmed) &&
-    !trimmed.endsWith(".")
+    trimmed.length <= 64 &&
+    !/[.!]$/.test(trimmed)
   ) {
     return true;
   }
 
   return false;
+};
+
+const toSectionHeading = (line: string): string => {
+  return resolveSectionHeadingText(line);
+};
+
+const promoteEmbeddedHeading = (
+  section: TranslationContentSection,
+): TranslationContentSection => {
+  if (section.heading?.trim()) {
+    return section;
+  }
+
+  const body = section.body.trim();
+  if (!body) {
+    return section;
+  }
+
+  const newlineIndex = body.indexOf("\n");
+  if (newlineIndex === -1) {
+    if (isSectionHeadingLine(body)) {
+      return { heading: toSectionHeading(body), body: "" };
+    }
+
+    return section;
+  }
+
+  const firstLine = body.slice(0, newlineIndex).trim();
+  if (!isSectionHeadingLine(firstLine)) {
+    return section;
+  }
+
+  return {
+    heading: toSectionHeading(firstLine),
+    body: body.slice(newlineIndex + 1).trim(),
+  };
+};
+
+export const normalizeTranslationSections = (
+  content: string,
+): TranslationContentSection[] => {
+  return splitContentBySections(content).map((section) =>
+    promoteEmbeddedHeading(section),
+  );
 };
 
 const isStandaloneHeadingBlock = (block: string): boolean => {
@@ -78,10 +123,10 @@ export const splitContentBySections = (
         const nextBlock = blocks[index + 1];
 
         if (nextBlock && !isStandaloneHeadingBlock(nextBlock)) {
-          sections.push({ heading: block, body: nextBlock });
+          sections.push({ heading: toSectionHeading(block), body: nextBlock });
           index += 1;
         } else {
-          sections.push({ heading: block, body: "" });
+          sections.push({ heading: toSectionHeading(block), body: "" });
         }
 
         continue;
@@ -95,7 +140,7 @@ export const splitContentBySections = (
     const rest = block.slice(newlineIndex + 1).trim();
 
     if (isSectionHeadingLine(firstLine)) {
-      sections.push({ heading: firstLine, body: rest });
+      sections.push({ heading: toSectionHeading(firstLine), body: rest });
       continue;
     }
 

@@ -1,6 +1,5 @@
 import clsx from "clsx";
 import type { MouseEvent, ReactElement } from "react";
-import { getSiteLabelFromUrl } from "@/lib/document/normalize-document-url";
 import { formatHistoryListDate } from "@/lib/translation/translation-history-date";
 import type { TranslationHistoryItem } from "@/types/translation";
 
@@ -8,18 +7,28 @@ interface HistoryListItemProps {
   item: TranslationHistoryItem;
   isSelected: boolean;
   isDeleting: boolean;
+  isLoading?: boolean;
   onSelect: (item: TranslationHistoryItem) => void;
   onDelete: (item: TranslationHistoryItem) => void;
 }
+
+const getHistorySiteAddress = (item: TranslationHistoryItem): string => {
+  if (item.url) {
+    return item.url;
+  }
+
+  return "직접 입력 텍스트";
+};
 
 export const HistoryListItem = ({
   item,
   isSelected,
   isDeleting,
+  isLoading = false,
   onSelect,
   onDelete,
 }: HistoryListItemProps): ReactElement => {
-  const siteLabel = getSiteLabelFromUrl(item.url);
+  const siteAddress = getHistorySiteAddress(item);
 
   const handleSelect = (): void => {
     onSelect(item);
@@ -40,32 +49,32 @@ export const HistoryListItem = ({
       <button
         type="button"
         onClick={handleSelect}
-        disabled={isDeleting}
+        disabled={isDeleting || isLoading}
         className={clsx(
-          "history-memo-item text-zinc-800",
+          "history-memo-item",
           isSelected && "history-memo-item-selected",
         )}
       >
         <span
           aria-hidden="true"
-          className="font-doc-aux shrink-0 text-[0.65rem] font-bold text-amber-700/55"
+          className="history-memo-item-bullet font-doc-aux shrink-0 text-[0.65rem] font-bold text-amber-700/55"
         >
           ·
         </span>
-        <span className="font-doc-translation-bold min-w-0 flex-1 truncate text-sm">
-          {item.title}
-        </span>
-        {item.url && (
-          <span className="font-doc-aux hidden shrink-0 text-xs text-amber-800/75 sm:inline">
-            {siteLabel}
+        <span className="history-memo-item-body min-w-0 flex-1">
+          <span className="history-memo-item-head">
+            <span className="history-memo-item-title font-doc-translation-bold">
+              {item.historySummary}
+            </span>
+            <time
+              dateTime={item.createdAt}
+              className="history-memo-item-time font-doc-aux"
+            >
+              {formatHistoryListDate(item.createdAt)}
+            </time>
           </span>
-        )}
-        <time
-          dateTime={item.createdAt}
-          className="font-doc-aux shrink-0 text-[0.65rem] text-amber-700/65"
-        >
-          {formatHistoryListDate(item.createdAt)}
-        </time>
+          <span className="history-memo-item-url font-doc-aux">{siteAddress}</span>
+        </span>
       </button>
       <button
         type="button"

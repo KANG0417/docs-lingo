@@ -14,7 +14,10 @@ export type TranslationErrorCode =
   | "FALLBACK_UNKNOWN"
   | "DOCUMENT_FETCH_FAILED"
   | "DOCUMENT_EMPTY"
+  | "UNOFFICIAL_DOCUMENT"
   | "TRANSLATION_ALL_FAILED";
+
+import { OFFICIAL_DOCUMENT_ONLY_MESSAGE } from "@/constants/official-document";
 
 interface TranslationErrorContext {
   hasUserApiKey?: boolean;
@@ -281,6 +284,14 @@ export const toTranslationError = (error: unknown): TranslationError => {
 
   const message = error instanceof Error ? error.message : "번역에 실패했습니다.";
 
+  if (message.includes(OFFICIAL_DOCUMENT_ONLY_MESSAGE.split("\n")[0] ?? "")) {
+    return new TranslationError(
+      "UNOFFICIAL_DOCUMENT",
+      OFFICIAL_DOCUMENT_ONLY_MESSAGE,
+      message,
+    );
+  }
+
   if (message.includes("문서를 가져오지 못했습니다")) {
     return new TranslationError(
       "DOCUMENT_FETCH_FAILED",
@@ -327,6 +338,7 @@ export const getTranslationErrorStatus = (
     case "DOCUMENT_FETCH_FAILED":
       return 502;
     case "DOCUMENT_EMPTY":
+    case "UNOFFICIAL_DOCUMENT":
       return 400;
     case "TRANSLATION_ALL_FAILED":
       return 500;
