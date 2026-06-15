@@ -167,7 +167,7 @@ export const DocReaderSection = (): ReactElement => {
                     placeholder="https://example.com/docs"
                     required
                     disabled={isLoading}
-                    className="h-12 w-full rounded-md border border-dashed border-[#0a1030] bg-white/80 px-4 text-sm text-zinc-900 placeholder:text-amber-700/40 focus:border-solid focus:border-[#0a1030] focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-amber-100/50"
+                    className="doc-reader-field doc-reader-field--url"
                   />
                 ) : (
                   <textarea
@@ -177,7 +177,7 @@ export const DocReaderSection = (): ReactElement => {
                     required
                     disabled={isLoading}
                     rows={10}
-                    className="font-doc-body memo-lines w-full resize-none overflow-y-auto rounded-md border border-dashed border-[#0a1030] bg-white/80 p-4 text-sm leading-[28px] text-zinc-900 placeholder:text-amber-700/40 focus:border-solid focus:border-[#0a1030] focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-amber-100/50"
+                    className="font-doc-body memo-lines doc-reader-field doc-reader-field--textarea"
                   />
                 )}
 

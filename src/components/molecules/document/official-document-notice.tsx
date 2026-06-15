@@ -13,6 +13,11 @@ export const OfficialDocumentNotice = ({
       aria-live={live}
       className="official-document-notice font-doc-translation relative w-full overflow-hidden rounded-md border border-indigo-400/25 bg-[#0a1030] px-4 py-3 text-sm leading-relaxed text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
     >
+      <div aria-hidden="true" className="official-document-notice-sky">
+        <span className="official-document-notice-meteor official-document-notice-meteor--a" />
+        <span className="official-document-notice-meteor official-document-notice-meteor--b" />
+      </div>
+
       <p className="relative z-[1]">
         <span className="font-doc-translation-bold text-[#fde68a]">공식 문서만</span>{" "}
         번역됩니다.
