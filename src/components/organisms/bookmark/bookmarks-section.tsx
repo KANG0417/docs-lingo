@@ -15,6 +15,7 @@ import type {
   DocumentTranslationResult,
   TranslationHistoryItem,
 } from "@/types/translation";
+import { sortPinnedFolderFirst } from "@/utils/bookmark-folder-order";
 
 const toTranslationResult = (
   item: TranslationHistoryItem,
@@ -39,6 +40,28 @@ const toFolderDrafts = (folderList: BookmarkFolder[]): BookmarkFolderDraft[] => 
     name: folder.name,
     isDefault: folder.isDefault,
   }));
+};
+
+const getDefaultExpandedFolderKeys = (
+  folderList: BookmarkFolder[],
+  groupedItems: Map<string, BookmarkListItem[]>,
+): Set<string> => {
+  const expanded = new Set<string>();
+
+  folderList.forEach((folder) => {
+    if (folder.isDefault) {
+      expanded.add(folder.id);
+      return;
+    }
+
+    const itemCount = groupedItems.get(folder.id)?.length ?? 0;
+
+    if (itemCount > 0) {
+      expanded.add(folder.id);
+    }
+  });
+
+  return expanded;
 };
 
 export const BookmarksSection = (): ReactElement => {
@@ -75,9 +98,15 @@ export const BookmarksSection = (): ReactElement => {
   const [expandedFolderKeys, setExpandedFolderKeys] = useState<Set<string>>(
     new Set(),
   );
+  const [hasInitializedExpansion, setHasInitializedExpansion] =
+    useState<boolean>(false);
 
   const sortedFolders = useMemo(() => {
-    return [...folders].sort((left, right) => left.sortOrder - right.sortOrder);
+    const ordered = [...folders].sort(
+      (left, right) => left.sortOrder - right.sortOrder,
+    );
+
+    return sortPinnedFolderFirst(ordered);
   }, [folders]);
 
   const selectedItem =
@@ -120,15 +149,41 @@ export const BookmarksSection = (): ReactElement => {
   }, [defaultFolderId, items, selectedDocumentId]);
 
   useEffect(() => {
-    if (defaultFolderId && expandedFolderKeys.size === 0) {
-      setExpandedFolderKeys(new Set([defaultFolderId]));
+    if (
+      isLoading ||
+      isFolderEditMode ||
+      hasInitializedExpansion ||
+      sortedFolders.length === 0
+    ) {
+      return;
     }
-  }, [defaultFolderId, expandedFolderKeys.size]);
+
+    setExpandedFolderKeys(
+      getDefaultExpandedFolderKeys(sortedFolders, itemsByFolderId),
+    );
+    setHasInitializedExpansion(true);
+  }, [
+    hasInitializedExpansion,
+    isFolderEditMode,
+    isLoading,
+    itemsByFolderId,
+    sortedFolders,
+  ]);
 
   useEffect(() => {
-    if (!isFolderEditMode && activeFolderKey) {
-      setExpandedFolderKeys(new Set([activeFolderKey]));
+    if (isFolderEditMode || !activeFolderKey) {
+      return;
     }
+
+    setExpandedFolderKeys((previous) => {
+      if (previous.has(activeFolderKey)) {
+        return previous;
+      }
+
+      const next = new Set(previous);
+      next.add(activeFolderKey);
+      return next;
+    });
   }, [activeFolderKey, isFolderEditMode]);
 
   const handleSelect = (item: BookmarkListItem): void => {
@@ -158,10 +213,26 @@ export const BookmarksSection = (): ReactElement => {
     })();
   };
 
+  const handleCloseDocument = (): void => {
+    setSelectedDocumentId(null);
+    setSelectedTranslation(null);
+    setLoadingDocumentId(null);
+  };
+
   const handleMove = (documentId: string, folderId: string): void => {
     if (isFolderEditMode) {
       return;
     }
+
+    setExpandedFolderKeys((previous) => {
+      if (previous.has(folderId)) {
+        return previous;
+      }
+
+      const next = new Set(previous);
+      next.add(folderId);
+      return next;
+    });
 
     void moveBookmark(documentId, folderId);
   };
@@ -185,6 +256,9 @@ export const BookmarksSection = (): ReactElement => {
     setIsFolderEditMode(false);
     setFolderDrafts([]);
     setDeletedFolderIds([]);
+    setExpandedFolderKeys(
+      getDefaultExpandedFolderKeys(sortedFolders, itemsByFolderId),
+    );
   };
 
   const handleSaveFolderEdits = (drafts: BookmarkFolderDraft[]): void => {
@@ -264,7 +338,7 @@ export const BookmarksSection = (): ReactElement => {
                 <p className="font-doc-aux mt-1 text-sm text-amber-900/75">
                   {isLoading
                     ? "불러오는 중..."
-                    : `총 ${totalCount}개 · 사용자 폴더 ${folderCountLabel}`}
+                    : `총 ${totalCount}개 · ${folderCountLabel}`}
                 </p>
               </div>
               <div className="bookmark-folder-toolbar">
@@ -386,15 +460,27 @@ export const BookmarksSection = (): ReactElement => {
 
         {isFolderEditMode && (
           <p className="bookmarks-placeholder bookmarks-placeholder-edit font-doc-aux">
-            폴더 수정 중입니다. 이름과 순서를 변경한 뒤 저장해 주세요. 기본 폴더는
-            삭제할 수 없습니다.
+            폴더 수정 중입니다. 변경 후 <strong>저장</strong>해 주세요.
           </p>
         )}
 
         {selectedItem && !selectedTranslation && !isFolderEditMode && (
-          <p className="bookmarks-placeholder bookmarks-placeholder-warn font-doc-aux">
-            이 문서의 번역 기록이 없습니다. 메인 페이지에서 다시 번역해 주세요.
-          </p>
+          <div className="bookmarks-reader-panel">
+            <div className="bookmarks-reader-toolbar">
+              <button
+                type="button"
+                aria-label="문서 닫기"
+                title="닫기"
+                onClick={handleCloseDocument}
+                className="bookmark-reader-close-btn font-doc-aux"
+              >
+                ×
+              </button>
+            </div>
+            <p className="bookmarks-placeholder bookmarks-placeholder-warn font-doc-aux">
+              이 문서의 번역 기록이 없습니다. 메인 페이지에서 다시 번역해 주세요.
+            </p>
+          </div>
         )}
 
         {selectedTranslation && !isFolderEditMode && (
@@ -402,6 +488,7 @@ export const BookmarksSection = (): ReactElement => {
             <TranslationResultSection
               result={selectedTranslation}
               showTranslationResultLabel={false}
+              onClose={handleCloseDocument}
             />
           </div>
         )}

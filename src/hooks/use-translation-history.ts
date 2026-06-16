@@ -1,12 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { HISTORY_PAGE_SIZE } from "@/constants/translation-history";
+import {
+  readStoredHistoryPage,
+  writeStoredHistoryPage,
+} from "@/lib/translation/translation-history-page-storage";
+import { getTranslationDayRange } from "@/lib/translation/translation-day-range";
 import {
   deleteTranslationHistoryItem,
   getTranslationHistory,
   getTranslationHistoryDateKeys,
 } from "@/services/translation-client-service";
-import { getTranslationDayRange } from "@/lib/translation/translation-day-range";
 import type { TranslationHistoryResponse } from "@/types/translation";
 
 interface UseTranslationHistoryReturn {
@@ -29,7 +34,9 @@ export const useTranslationHistory = (
   const [selectedDateKey, setSelectedDateKey] = useState<string>(
     getTranslationDayRange().dateKey,
   );
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [currentPage, setCurrentPage] = useState<number>(() =>
+    readStoredHistoryPage(getTranslationDayRange().dateKey),
+  );
   const [historyResponse, setHistoryResponse] =
     useState<TranslationHistoryResponse | null>(null);
   const [historyDateKeys, setHistoryDateKeys] = useState<string[]>([]);
@@ -45,6 +52,7 @@ export const useTranslationHistory = (
       const history = await getTranslationHistory({
         dateKey: selectedDateKey,
         page: currentPage,
+        pageSize: HISTORY_PAGE_SIZE,
       });
       setHistoryResponse(history);
     } catch (error) {
@@ -105,10 +113,13 @@ export const useTranslationHistory = (
           const history = await getTranslationHistory({
             dateKey: selectedDateKey,
             page: currentPage,
+            pageSize: HISTORY_PAGE_SIZE,
           });
 
           if (history.items.length === 0 && currentPage > 1) {
-            setCurrentPage(currentPage - 1);
+            const previousPage = currentPage - 1;
+            setCurrentPage(previousPage);
+            writeStoredHistoryPage(selectedDateKey, previousPage);
             return true;
           }
 
@@ -136,7 +147,12 @@ export const useTranslationHistory = (
 
   const handleSetSelectedDateKey = (dateKey: string): void => {
     setSelectedDateKey(dateKey);
-    setCurrentPage(1);
+    setCurrentPage(readStoredHistoryPage(dateKey));
+  };
+
+  const handleSetCurrentPage = (page: number): void => {
+    setCurrentPage(page);
+    writeStoredHistoryPage(selectedDateKey, page);
   };
 
   return {
@@ -148,7 +164,7 @@ export const useTranslationHistory = (
     deletingId,
     errorMessage,
     setSelectedDateKey: handleSetSelectedDateKey,
-    setCurrentPage,
+    setCurrentPage: handleSetCurrentPage,
     refreshHistory,
     deleteHistoryItem,
   };

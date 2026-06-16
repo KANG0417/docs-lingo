@@ -204,27 +204,42 @@ export const expandSegmentsWithSectionLabels = (
   });
 };
 
-const INLINE_MARKUP_PATTERN =
-  /<u>([\s\S]*?)<\/u>|`([^`\n]+)`|\*\*([^*\n]+)\*\*/gi;
+const UNDERLINE_AND_CODE_PATTERN =
+  /<u>([\s\S]*?)<\/u>|`([^`\n]+)`/gi;
 
-export const splitTextByInlineMarkup = (text: string): TextSegment[] => {
+const BOLD_PATTERN = /\*\*([^*\n]+)\*\*/g;
+
+const pushResidualTextSegment = (
+  segments: TextSegment[],
+  value: string,
+): void => {
+  const cleanedValue = stripResidualMarkupTags(value);
+
+  if (!cleanedValue) {
+    return;
+  }
+
+  segments.push({
+    type: "text",
+    value: cleanedValue,
+  });
+};
+
+const splitTextByUnderlineAndCode = (text: string): TextSegment[] => {
   const normalizedText = normalizeInlineMarkupSource(text);
   const segments: TextSegment[] = [];
   let lastIndex = 0;
 
-  for (const match of normalizedText.matchAll(INLINE_MARKUP_PATTERN)) {
+  for (const match of normalizedText.matchAll(UNDERLINE_AND_CODE_PATTERN)) {
     const matchIndex = match.index ?? 0;
     const underlineValue = match[1];
     const backtickValue = match[2];
-    const boldValue = match[3];
 
     if (matchIndex > lastIndex) {
-      segments.push({
-        type: "text",
-        value: stripResidualMarkupTags(
-          normalizedText.slice(lastIndex, matchIndex),
-        ),
-      });
+      pushResidualTextSegment(
+        segments,
+        normalizedText.slice(lastIndex, matchIndex),
+      );
     }
 
     if (underlineValue !== undefined) {
@@ -237,7 +252,33 @@ export const splitTextByInlineMarkup = (text: string): TextSegment[] => {
         type: "keyword",
         value: backtickValue.trim(),
       });
-    } else if (boldValue !== undefined) {
+    }
+
+    lastIndex = matchIndex + match[0].length;
+  }
+
+  if (lastIndex < normalizedText.length) {
+    pushResidualTextSegment(segments, normalizedText.slice(lastIndex));
+  }
+
+  return segments.length > 0
+    ? segments
+    : [{ type: "text", value: stripResidualMarkupTags(normalizedText) }];
+};
+
+const splitTextByBold = (text: string): TextSegment[] => {
+  const segments: TextSegment[] = [];
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(BOLD_PATTERN)) {
+    const matchIndex = match.index ?? 0;
+    const boldValue = match[1];
+
+    if (matchIndex > lastIndex) {
+      pushResidualTextSegment(segments, text.slice(lastIndex, matchIndex));
+    }
+
+    if (boldValue !== undefined) {
       segments.push({
         type: "bold",
         value: boldValue.trim(),
@@ -247,16 +288,23 @@ export const splitTextByInlineMarkup = (text: string): TextSegment[] => {
     lastIndex = matchIndex + match[0].length;
   }
 
-  if (lastIndex < normalizedText.length) {
-    segments.push({
-      type: "text",
-      value: stripResidualMarkupTags(normalizedText.slice(lastIndex)),
-    });
+  if (lastIndex < text.length) {
+    pushResidualTextSegment(segments, text.slice(lastIndex));
   }
 
   return segments.length > 0
     ? segments
-    : [{ type: "text", value: stripResidualMarkupTags(normalizedText) }];
+    : [{ type: "text", value: stripResidualMarkupTags(text) }];
+};
+
+export const splitTextByInlineMarkup = (text: string): TextSegment[] => {
+  return splitTextByUnderlineAndCode(text).flatMap((segment) => {
+    if (segment.type !== "text") {
+      return [segment];
+    }
+
+    return splitTextByBold(segment.value);
+  });
 };
 
 export const applyInlineMarkupToSegments = (

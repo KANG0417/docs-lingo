@@ -5,6 +5,7 @@ import type { ReactElement } from "react";
 import { HistoryDatePicker } from "@/components/molecules/document/history-date-picker";
 import { HistoryListItem } from "@/components/molecules/document/history-list-item";
 import { HistoryPagination } from "@/components/molecules/document/history-pagination";
+import { HISTORY_PAGE_SIZE } from "@/constants/translation-history";
 import { useTranslationHistory } from "@/hooks/use-translation-history";
 import { getTranslationHistoryItem } from "@/services/translation-client-service";
 import type {
@@ -115,7 +116,7 @@ export const TranslationHistoryPanel = ({
           </div>
         </header>
 
-        <div className="history-memo-list history-memo-margin memo-lines flex min-h-0 flex-1 flex-col overflow-y-auto">
+        <div className="history-memo-list history-memo-margin memo-lines flex min-h-0 flex-1 flex-col">
           {isLoading && (
             <p className="font-doc-aux px-3 py-8 text-center text-sm text-amber-700/70">
               메모를 펼치는 중...
@@ -138,7 +139,7 @@ export const TranslationHistoryPanel = ({
           )}
 
           {!isLoading && historyItems.length > 0 && (
-            <ul className="min-h-0 flex-1 overflow-y-auto">
+            <ul className="history-memo-list-viewport">
               {historyItems.map((item) => (
                 <li key={item.id}>
                   <HistoryListItem
@@ -157,7 +158,7 @@ export const TranslationHistoryPanel = ({
           )}
         </div>
 
-        {totalPages > 1 && (
+        {totalCount > HISTORY_PAGE_SIZE && (
           <HistoryPagination
             currentPage={currentPage}
             totalPages={totalPages}

@@ -3,10 +3,14 @@
 import clsx from "clsx";
 import { useState } from "react";
 import type { DragEvent, ReactElement } from "react";
+import { BookmarkDefaultFolderIndicator } from "@/components/atoms/icon/bookmark-default-folder-indicator";
 import { BookmarkFolderIcon } from "@/components/atoms/icon/bookmark-folder-icon";
-import { BookmarkPinnedFolderIcon } from "@/components/atoms/icon/bookmark-pinned-folder-icon";
 import { BookmarkListItemRow } from "@/components/molecules/document/bookmark-list-item";
-import { BOOKMARK_DRAG_DOCUMENT_ID_MIME } from "@/constants/bookmark";
+import {
+  BOOKMARK_DEFAULT_STORAGE_NAME,
+  BOOKMARK_DRAG_DOCUMENT_ID_MIME,
+  BOOKMARK_PINNED_FOLDER_LABEL,
+} from "@/constants/bookmark";
 import type { BookmarkListItem } from "@/types/bookmark";
 
 interface BookmarkFolderDropZoneProps {
@@ -79,6 +83,7 @@ export const BookmarkFolderDropZone = ({
   };
 
   const panelId = `bookmark-folder-panel-${folderId}`;
+  const isDefaultStorage = folderName === BOOKMARK_DEFAULT_STORAGE_NAME;
 
   return (
     <section
@@ -88,10 +93,21 @@ export const BookmarkFolderDropZone = ({
       onDrop={handleDrop}
       className={clsx(
         "bookmark-folder-zone",
+        isDefault && "bookmark-folder-zone-pinned",
+        isDefaultStorage && "bookmark-folder-zone-default-storage",
+        isDefault && "bookmark-folder-zone-pinned-meteor",
         isDragOver && "bookmark-folder-zone-active",
         !isExpanded && "bookmark-folder-zone-collapsed",
       )}
     >
+      {isDefault && (
+        <div aria-hidden="true" className="bookmark-folder-zone-pinned-sky">
+          <span className="bookmark-folder-zone-meteor bookmark-folder-zone-meteor--a" />
+          <span className="bookmark-folder-zone-meteor bookmark-folder-zone-meteor--b" />
+          <span className="bookmark-folder-zone-meteor bookmark-folder-zone-meteor--c" />
+        </div>
+      )}
+
       <button
         type="button"
         aria-expanded={isExpanded}
@@ -108,21 +124,17 @@ export const BookmarkFolderDropZone = ({
         >
           ▶
         </span>
-        {isDefault ? (
-          <span
-            title="기본 폴더"
-            className="bookmark-folder-zone-icon-wrap bookmark-folder-zone-icon-wrap-pinned"
-          >
-            <BookmarkPinnedFolderIcon
-              size={15}
-              className="bookmark-folder-zone-icon bookmark-folder-zone-icon-pinned"
-            />
+        <BookmarkFolderIcon size={15} className="bookmark-folder-zone-icon" />
+        <span className="bookmark-folder-zone-title-group">
+          <span className="bookmark-folder-zone-title font-doc-translation-bold">
+            {folderName}
           </span>
-        ) : (
-          <BookmarkFolderIcon size={15} className="bookmark-folder-zone-icon" />
-        )}
-        <span className="bookmark-folder-zone-title font-doc-translation-bold">
-          {folderName}
+          {isDefault && (
+            <BookmarkDefaultFolderIndicator
+              iconSize={16}
+              title={BOOKMARK_PINNED_FOLDER_LABEL}
+            />
+          )}
         </span>
         <span className="bookmark-folder-zone-count font-doc-aux">
           {items.length}

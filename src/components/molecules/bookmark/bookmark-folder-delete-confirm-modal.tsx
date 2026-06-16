@@ -1,5 +1,6 @@
 "use client";
 
+import { BOOKMARK_PINNED_FOLDER_LABEL } from "@/constants/bookmark";
 import { useEffect } from "react";
 import type { MouseEvent, ReactElement } from "react";
 
@@ -77,15 +78,16 @@ export const BookmarkFolderDeleteConfirmModal = ({
             className="font-doc-aux mt-4 text-center text-sm leading-relaxed text-amber-900/90"
           >
             <span className="font-bold text-amber-950">&quot;{folderName}&quot;</span>
-            {" "}폴더를 삭제합니다.
+            {" "}폴더를 <strong>삭제</strong>합니다.
             {itemCount > 0 && (
               <>
                 <br />
-                안의 메모 {itemCount}개는 기본 폴더로 옮겨집니다.
+                안의 메모 <strong>{itemCount}개</strong>는{" "}
+                <strong>{BOOKMARK_PINNED_FOLDER_LABEL}</strong>로 옮겨집니다.
               </>
             )}
             <br />
-            저장하기 전까지는 되돌릴 수 있습니다.
+            <strong>저장</strong>하기 전까지는 되돌릴 수 있습니다.
           </p>
 
           <div className="mt-6 flex justify-center gap-3">

@@ -296,7 +296,7 @@ export const ProfileSection = ({
                   nicknameError ? "profile-nickname-error" : undefined
                 }
                 className={clsx(
-                  "h-12 w-full rounded-md border bg-white/80 px-4 text-lg text-zinc-900 placeholder:text-sm placeholder:text-amber-700/40 focus:outline-none disabled:cursor-not-allowed disabled:bg-amber-100/50",
+                  "h-12 w-full rounded-md border bg-white/80 px-4 text-lg text-zinc-900 placeholder:text-sm placeholder:text-amber-700/40 focus:outline-none disabled:cursor-default disabled:bg-amber-100/50",
                   nicknameError
                     ? "border-solid border-red-400 bg-red-50/40 focus:border-red-500 focus:ring-2 focus:ring-red-200"
                     : "border-dashed border-amber-400 focus:border-solid focus:border-indigo-400 focus:ring-2 focus:ring-indigo-200",

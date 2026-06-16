@@ -1,3 +1,4 @@
+import { HISTORY_PAGE_SIZE } from "@/constants/translation-history";
 import type {
   DocumentTranslationResult,
   TranslationHistoryDateKeysResponse,
@@ -44,13 +45,8 @@ export const getTranslationHistory = async (
     searchParams.set("date", query.dateKey);
   }
 
-  if (query.page) {
-    searchParams.set("page", String(query.page));
-  }
-
-  if (query.pageSize) {
-    searchParams.set("pageSize", String(query.pageSize));
-  }
+  searchParams.set("page", String(query.page ?? 1));
+  searchParams.set("pageSize", String(query.pageSize ?? HISTORY_PAGE_SIZE));
 
   const queryString = searchParams.toString();
   const endpoint = queryString

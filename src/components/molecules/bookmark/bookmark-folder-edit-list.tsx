@@ -5,7 +5,11 @@ import type { ReactElement } from "react";
 import { BookmarkFolderDeleteConfirmModal } from "@/components/molecules/bookmark/bookmark-folder-delete-confirm-modal";
 import { BookmarkFolderEditActions } from "@/components/molecules/bookmark/bookmark-folder-edit-actions";
 import { BookmarkFolderEditRow } from "@/components/molecules/bookmark/bookmark-folder-edit-row";
+import { BookmarkPinnedFolderIcon } from "@/components/atoms/icon/bookmark-pinned-folder-icon";
+import { BOOKMARK_PINNED_FOLDER_LABEL } from "@/constants/bookmark";
 import type { BookmarkFolderDraft } from "@/types/bookmark";
+import { sortPinnedFolderFirst } from "@/utils/bookmark-folder-order";
+import { validateFolderName } from "@/lib/bookmark/validate-folder-name";
 
 interface BookmarkFolderEditListProps {
   folders: BookmarkFolderDraft[];
@@ -59,6 +63,11 @@ export const BookmarkFolderEditList = ({
   const [pendingDeleteFolder, setPendingDeleteFolder] =
     useState<PendingDeleteFolder | null>(null);
 
+  const pinnedFolder = folders.find((folder) => folder.isDefault);
+  const hasInvalidFolderName = folders.some(
+    (folder) => validateFolderName(folder.name) !== null,
+  );
+
   const handleNameChange = (folderId: string, name: string): void => {
     onChange(
       folders.map((folder) =>
@@ -72,7 +81,11 @@ export const BookmarkFolderEditList = ({
       return;
     }
 
-    onChange(reorderFolders(folders, draggingFolderId, targetFolderId));
+    onChange(
+      sortPinnedFolderFirst(
+        reorderFolders(folders, draggingFolderId, targetFolderId),
+      ),
+    );
     setDraggingFolderId(null);
   };
 
@@ -99,13 +112,52 @@ export const BookmarkFolderEditList = ({
     setPendingDeleteFolder(null);
   };
 
+  const handlePin = (folderId: string): void => {
+    onChange(
+      sortPinnedFolderFirst(
+        folders.map((folder) => ({
+          ...folder,
+          isDefault: folder.id === folderId,
+        })),
+      ),
+    );
+  };
+
   return (
     <>
       <section aria-label="폴더 수정" className="bookmark-folder-edit-panel">
-        <p className="bookmark-folder-edit-guide font-doc-aux">
-          폴더 이름을 바꾸거나 ⠿ 핸들을 드래그해 순서를 변경할 수 있습니다. 기본
-          폴더는 삭제할 수 없습니다.
-        </p>
+        <header className="bookmark-folder-edit-header">
+          <h3 className="bookmark-folder-edit-title font-doc-title">
+            폴더 수정
+          </h3>
+          {pinnedFolder && (
+            <p className="bookmark-folder-edit-pinned-summary font-doc-aux">
+              <BookmarkPinnedFolderIcon size={16} aria-hidden="true" />
+              <span>
+                <strong>{BOOKMARK_PINNED_FOLDER_LABEL}</strong>:{" "}
+                <strong>{pinnedFolder.name}</strong>
+              </span>
+            </p>
+          )}
+        </header>
+
+        <div className="bookmark-folder-edit-guide font-doc-aux">
+          <p className="bookmark-folder-edit-guide-line">
+            폴더 이름은 <strong>15자 이내</strong>로 입력해 주세요.
+          </p>
+          <p className="bookmark-folder-edit-guide-line">
+            <span className="bookmark-folder-edit-guide-grip" aria-hidden="true">
+              ⠿
+            </span>{" "}
+            <strong>핸들</strong>을 <strong>드래그</strong>해{" "}
+            <strong>폴더 순서</strong>를 변경할 수 있습니다.
+          </p>
+          <p className="bookmark-folder-edit-guide-line">
+            <strong>핀 아이콘</strong>을 눌러{" "}
+            <strong>{BOOKMARK_PINNED_FOLDER_LABEL}</strong>를 지정할 수 있으며,{" "}
+            <strong>1개</strong>만 지정되고 <strong>삭제</strong>할 수 없습니다.
+          </p>
+        </div>
 
         {folders.length === 0 ? (
           <p className="bookmark-folder-edit-empty font-doc-aux">
@@ -126,6 +178,7 @@ export const BookmarkFolderEditList = ({
                   }}
                   onDrop={handleDrop}
                   onDelete={handleDeleteRequest}
+                  onPin={handlePin}
                 />
               </li>
             ))}
@@ -134,6 +187,7 @@ export const BookmarkFolderEditList = ({
 
         <BookmarkFolderEditActions
           isSaving={isSaving}
+          isSaveDisabled={hasInvalidFolderName}
           onSave={() => {
             onSave(folders);
           }}

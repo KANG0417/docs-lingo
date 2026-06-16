@@ -49,7 +49,7 @@ export const TranslationBookmarkButton = ({
         title={isBookmarked ? "북마크 해제" : "북마크에 추가"}
         className={clsx(
           "translation-bookmark-btn inline-flex shrink-0 items-center justify-center p-1",
-          "disabled:cursor-not-allowed disabled:opacity-60",
+          "disabled:cursor-default disabled:opacity-60",
           isBookmarked && "is-bookmarked",
         )}
       >

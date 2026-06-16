@@ -9,7 +9,7 @@ GRANT SELECT ON public.profile_histories TO authenticated;
 GRANT SELECT ON public.documents TO anon, authenticated;
 GRANT INSERT ON public.documents TO authenticated;
 GRANT SELECT, INSERT, DELETE ON public.translations TO authenticated;
-GRANT SELECT, INSERT, UPDATE (name, sort_order), DELETE ON public.bookmark_folders TO authenticated;
+GRANT SELECT, INSERT, UPDATE (name, sort_order, is_default), DELETE ON public.bookmark_folders TO authenticated;
 GRANT SELECT, INSERT, UPDATE (folder_id), DELETE ON public.bookmarks TO authenticated;
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;

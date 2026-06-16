@@ -43,7 +43,15 @@ export const normalizeInlineMarkupSource = (value: string): string => {
 
   return repaired
     .replace(/<\s*u\s*>/gi, "<u>")
-    .replace(/<\s*\/\s*u\s*>/gi, "</u>");
+    .replace(/<\/\s*u\s*>/gi, "</u>")
+    .replace(/<\/u\s+>/gi, "</u>");
+};
+
+/** 섹션 제목 판별 전 — 밑줄·백틱·볼드 인라인 마크업이 있으면 본문 용어 표기로 취급 */
+export const containsInlineTermMarkup = (value: string): boolean => {
+  const source = normalizeInlineMarkupSource(value.trim());
+
+  return /(<u>[\s\S]*?<\/u>|`[^`\n]+`|\*\*[^*\n]+\*\*)/i.test(source);
 };
 
 export const normalizeKeywordDescription = (

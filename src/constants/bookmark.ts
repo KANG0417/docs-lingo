@@ -5,7 +5,9 @@ export const BOOKMARK_DEFAULT_STORAGE_KEY = "default-storage";
 
 export const BOOKMARK_DEFAULT_STORAGE_NAME = "기본 저장소";
 
-export const MAX_BOOKMARK_FOLDER_NAME_LENGTH = 30;
+export const BOOKMARK_PINNED_FOLDER_LABEL = "고정된 폴더";
+
+export const MAX_BOOKMARK_FOLDER_NAME_LENGTH = 15;
 
 export const MAX_BOOKMARK_FOLDER_COUNT = 30;
 

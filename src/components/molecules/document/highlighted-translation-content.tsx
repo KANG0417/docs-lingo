@@ -63,9 +63,13 @@ const renderInlineSegments = (
     }
 
     if (segment.type === "bold") {
+      const innerSegments = applyInlineMarkupToSegments([
+        { type: "text", value: segment.value },
+      ]);
+
       return (
         <strong key={`bold-${segmentKey}`} className="note-highlight">
-          {segment.value}
+          {renderInlineSegments(innerSegments, `${segmentKey}-inner`)}
         </strong>
       );
     }

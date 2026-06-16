@@ -74,7 +74,10 @@ export const BookmarkListItemRow = ({
       >
         <span
           aria-hidden="true"
-          className="bookmark-memo-grip history-memo-item-bullet font-doc-aux shrink-0 font-bold text-amber-700/60"
+          className={clsx(
+            "bookmark-memo-grip history-memo-item-bullet font-doc-aux shrink-0 font-bold",
+            isSelected ? "text-white/75" : "text-amber-700/60",
+          )}
           title="드래그해서 폴더로 이동"
         >
           ⠿

@@ -1,20 +1,23 @@
 import type { ReactElement } from "react";
 import { BookmarkPinnedFolderIcon } from "@/components/atoms/icon/bookmark-pinned-folder-icon";
+import { BOOKMARK_PINNED_FOLDER_LABEL } from "@/constants/bookmark";
 
 interface BookmarkDefaultFolderIndicatorProps {
-  className?: string;
+  title?: string;
+  iconSize?: number;
 }
 
 export const BookmarkDefaultFolderIndicator = ({
-  className,
+  title = BOOKMARK_PINNED_FOLDER_LABEL,
+  iconSize = 18,
 }: BookmarkDefaultFolderIndicatorProps): ReactElement => {
   return (
     <span
-      className={className}
-      title="기본 폴더"
-      aria-label="기본 폴더"
+      className="bookmark-folder-icon-btn bookmark-folder-icon-btn--pinned"
+      title={title}
+      aria-label={title}
     >
-      <BookmarkPinnedFolderIcon size={14} />
+      <BookmarkPinnedFolderIcon size={iconSize} />
     </span>
   );
 };

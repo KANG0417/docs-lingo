@@ -2,12 +2,14 @@ import type { ReactElement } from "react";
 
 interface BookmarkFolderEditActionsProps {
   isSaving: boolean;
+  isSaveDisabled?: boolean;
   onSave: () => void;
   onCancel: () => void;
 }
 
 export const BookmarkFolderEditActions = ({
   isSaving,
+  isSaveDisabled = false,
   onSave,
   onCancel,
 }: BookmarkFolderEditActionsProps): ReactElement => {
@@ -15,7 +17,7 @@ export const BookmarkFolderEditActions = ({
     <div className="bookmark-folder-edit-actions">
       <button
         type="button"
-        disabled={isSaving}
+        disabled={isSaving || isSaveDisabled}
         onClick={onSave}
         className="bookmark-folder-edit-save font-doc-aux"
       >

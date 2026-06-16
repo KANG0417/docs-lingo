@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import type { FormEvent, ReactElement } from "react";
-import { MAX_BOOKMARK_FOLDER_NAME_LENGTH } from "@/constants/bookmark";
+import { BookmarkFolderNameCounter } from "@/components/atoms/text/bookmark-folder-name-counter";
+import {
+  enforceFolderNameMaxLength,
+  validateFolderName,
+} from "@/lib/bookmark/validate-folder-name";
 
 interface BookmarkCreateFolderFormProps {
   isSubmitting: boolean;
@@ -16,12 +20,19 @@ export const BookmarkCreateFolderForm = ({
   onCancel,
 }: BookmarkCreateFolderFormProps): ReactElement => {
   const [name, setName] = useState<string>("");
+  const validationError = name.trim() ? validateFolderName(name) : null;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
+    const error = validateFolderName(name);
+
+    if (error) {
+      return;
+    }
+
     void (async (): Promise<void> => {
-      await onSubmit(name);
+      await onSubmit(name.trim());
       setName("");
     })();
   };
@@ -32,25 +43,35 @@ export const BookmarkCreateFolderForm = ({
       className="bookmark-create-folder-form"
       aria-label="새 폴더 만들기"
     >
-      <label className="sr-only" htmlFor="bookmark-folder-name">
-        폴더 이름
-      </label>
-      <input
-        id="bookmark-folder-name"
-        type="text"
-        value={name}
-        maxLength={MAX_BOOKMARK_FOLDER_NAME_LENGTH}
-        placeholder="폴더 이름"
-        disabled={isSubmitting}
-        onChange={(event) => {
-          setName(event.target.value);
-        }}
-        className="bookmark-create-folder-input font-doc-aux"
-      />
+      <div className="bookmark-create-folder-input-wrap">
+        <label className="sr-only" htmlFor="bookmark-folder-name">
+          폴더 이름
+        </label>
+        <input
+          id="bookmark-folder-name"
+          type="text"
+          value={name}
+          placeholder="폴더 이름"
+          disabled={isSubmitting}
+          onChange={(event) => {
+            setName(enforceFolderNameMaxLength(event.target.value));
+          }}
+          className="bookmark-create-folder-input font-doc-aux"
+        />
+        <BookmarkFolderNameCounter
+          value={name}
+          className="bookmark-folder-name-counter bookmark-folder-name-counter--create font-doc-aux"
+        />
+      </div>
+      {validationError && (
+        <p className="bookmark-create-folder-error font-doc-aux" role="alert">
+          {validationError}
+        </p>
+      )}
       <div className="bookmark-create-folder-actions">
         <button
           type="submit"
-          disabled={isSubmitting || !name.trim()}
+          disabled={isSubmitting || validateFolderName(name) !== null}
           className="bookmark-create-folder-submit font-doc-aux"
         >
           {isSubmitting ? "…" : "만들기"}

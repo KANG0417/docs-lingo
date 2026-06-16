@@ -1,4 +1,7 @@
-import { stripSectionHeadingMarkup, resolveSectionHeadingText } from "@/lib/translation/inline-markup-utils";
+import {
+  containsInlineTermMarkup,
+  resolveSectionHeadingText,
+} from "@/lib/translation/inline-markup-utils";
 
 export interface TranslationContentSection {
   heading: string | null;
@@ -6,7 +9,13 @@ export interface TranslationContentSection {
 }
 
 export const isSectionHeadingLine = (line: string): boolean => {
-  const trimmed = resolveSectionHeadingText(line);
+  const trimmedLine = line.trim();
+
+  if (containsInlineTermMarkup(trimmedLine)) {
+    return false;
+  }
+
+  const trimmed = resolveSectionHeadingText(trimmedLine);
 
   if (!trimmed || trimmed.length > 100) {
     return false;

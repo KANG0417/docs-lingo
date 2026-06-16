@@ -9,6 +9,7 @@ interface TranslationResultSectionProps {
   result: DocumentTranslationResult;
   isMemoTilted?: boolean;
   showTranslationResultLabel?: boolean;
+  onClose?: () => void;
 }
 
 const isBookmarkableTranslation = (translationId: string): boolean => {
@@ -23,6 +24,7 @@ export const TranslationResultSection = ({
   result,
   isMemoTilted = false,
   showTranslationResultLabel = true,
+  onClose,
 }: TranslationResultSectionProps): ReactElement => {
   const isBookmarkable = isBookmarkableTranslation(result.id);
 
@@ -62,11 +64,24 @@ export const TranslationResultSection = ({
             )}
           </div>
 
-          <TranslationBookmarkButton
-            documentId={result.documentId}
-            documentTitle={result.title}
-            isBookmarkable={isBookmarkable}
-          />
+          <div className="flex shrink-0 items-start gap-2">
+            <TranslationBookmarkButton
+              documentId={result.documentId}
+              documentTitle={result.title}
+              isBookmarkable={isBookmarkable}
+            />
+            {onClose && (
+              <button
+                type="button"
+                aria-label="문서 닫기"
+                title="닫기"
+                onClick={onClose}
+                className="bookmark-reader-close-btn font-doc-aux"
+              >
+                ×
+              </button>
+            )}
+          </div>
         </header>
 
         {result.summaryTerms.length > 0 && (

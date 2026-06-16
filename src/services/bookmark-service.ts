@@ -4,8 +4,9 @@ import { toPublicDocumentUrl } from "@/lib/document/text-document-url";
 import { buildTranslationHistorySummary } from "@/lib/translation/build-history-summary";
 import { translateDocumentTitle } from "@/lib/translation/translate-document-title";
 import { getSupabaseAdminClient } from "@/lib/supabase/supabase-admin";
-import { MAX_BOOKMARK_FOLDER_COUNT, BOOKMARK_DEFAULT_STORAGE_NAME } from "@/constants/bookmark";
+import { MAX_BOOKMARK_FOLDER_COUNT, BOOKMARK_DEFAULT_STORAGE_NAME, BOOKMARK_PINNED_FOLDER_LABEL, MAX_BOOKMARK_FOLDER_NAME_LENGTH } from "@/constants/bookmark";
 import { resolveUniqueFolderName, resolveUniqueFolderNames } from "@/lib/bookmark/resolve-unique-folder-name";
+import { getFolderNameLength } from "@/lib/bookmark/validate-folder-name";
 import type { DocumentCodeBlock } from "@/types/document-code-block";
 import type { DocumentImage } from "@/types/document-image";
 import type {
@@ -540,6 +541,12 @@ export const createBookmarkFolder = async (
     throw new Error("폴더 이름을 입력해 주세요.");
   }
 
+  if (getFolderNameLength(trimmedName) > MAX_BOOKMARK_FOLDER_NAME_LENGTH) {
+    throw new Error(
+      `폴더 이름은 ${MAX_BOOKMARK_FOLDER_NAME_LENGTH}자 이하로 입력해 주세요.`,
+    );
+  }
+
   const folderCount = await countCustomUserFolders(userId);
 
   if (folderCount >= MAX_BOOKMARK_FOLDER_COUNT) {
@@ -607,6 +614,148 @@ export const createBookmarkFolder = async (
   return mapFolderRow(folder, folder.sort_order ?? folderCount, false);
 };
 
+const buildRenameStagingFolderName = (folderId: string): string => {
+  const compactId = folderId.replace(/-/g, "").slice(0, 14);
+
+  return `~${compactId}`;
+};
+
+const clearUserFolderDefaultFlags = async (
+  userId: string,
+): Promise<void> => {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    throw new Error("Supabase 연결이 설정되지 않았습니다.");
+  }
+
+  const { error } = await supabase
+    .from("bookmark_folders")
+    .update({ is_default: false })
+    .eq("user_id", userId);
+
+  if (error && !isMissingFolderIsDefaultError(error.message)) {
+    console.error("[updateBookmarkFolders] clear defaults", error.message);
+    throw new Error("폴더를 수정하지 못했습니다.");
+  }
+};
+
+const stageFolderNamesForRename = async (
+  userId: string,
+  folderIds: string[],
+): Promise<void> => {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    throw new Error("Supabase 연결이 설정되지 않았습니다.");
+  }
+
+  for (const folderId of folderIds) {
+    const { error } = await supabase
+      .from("bookmark_folders")
+      .update({ name: buildRenameStagingFolderName(folderId) })
+      .eq("id", folderId)
+      .eq("user_id", userId);
+
+    if (error) {
+      console.error("[updateBookmarkFolders] stage rename", error.message);
+
+      if (isUniqueViolationError(error.message)) {
+        throw new Error("이미 사용 중인 폴더 이름입니다.");
+      }
+
+      throw new Error("폴더를 수정하지 못했습니다.");
+    }
+  }
+};
+
+const throwFolderUpdateError = (errorMessage: string): never => {
+  if (isUniqueViolationError(errorMessage)) {
+    throw new Error("이미 사용 중인 폴더 이름입니다.");
+  }
+
+  throw new Error("폴더를 수정하지 못했습니다.");
+};
+
+const applyFolderNameAndSortOrder = async (
+  userId: string,
+  update: {
+    id: string;
+    name: string;
+    sort_order: number;
+  },
+): Promise<void> => {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    throw new Error("Supabase 연결이 설정되지 않았습니다.");
+  }
+
+  const { error: fullUpdateError } = await supabase
+    .from("bookmark_folders")
+    .update({
+      name: update.name,
+      sort_order: update.sort_order,
+    })
+    .eq("id", update.id)
+    .eq("user_id", userId);
+
+  if (!fullUpdateError) {
+    return;
+  }
+
+  if (isMissingFolderSortOrderError(fullUpdateError.message)) {
+    const { error: legacyUpdateError } = await supabase
+      .from("bookmark_folders")
+      .update({ name: update.name })
+      .eq("id", update.id)
+      .eq("user_id", userId);
+
+    if (!legacyUpdateError) {
+      return;
+    }
+
+    console.error("[updateBookmarkFolders] legacy name", legacyUpdateError.message);
+    throwFolderUpdateError(legacyUpdateError.message);
+  }
+
+  console.error("[updateBookmarkFolders] name sort", fullUpdateError.message);
+  throwFolderUpdateError(fullUpdateError.message);
+};
+
+const assignPinnedFolderFlag = async (
+  userId: string,
+  pinnedFolderId: string,
+): Promise<void> => {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    throw new Error("Supabase 연결이 설정되지 않았습니다.");
+  }
+
+  const { error } = await supabase
+    .from("bookmark_folders")
+    .update({ is_default: true })
+    .eq("id", pinnedFolderId)
+    .eq("user_id", userId);
+
+  if (!error) {
+    return;
+  }
+
+  if (isMissingFolderIsDefaultError(error.message)) {
+    return;
+  }
+
+  console.error("[updateBookmarkFolders] pin flag", error.message);
+
+  if (isUniqueViolationError(error.message)) {
+    throw new Error(`${BOOKMARK_PINNED_FOLDER_LABEL}를 지정하지 못했습니다.`);
+  }
+
+  throw new Error("폴더를 수정하지 못했습니다.");
+};
+
 export const updateBookmarkFolders = async (
   userId: string,
   folderDrafts: BookmarkFolderDraft[],
@@ -620,17 +769,8 @@ export const updateBookmarkFolders = async (
 
   const existingFolders = await fetchUserFolders(userId);
   const existingIds = new Set(existingFolders.map((folder) => folder.id));
-  const defaultFolder = existingFolders.find((folder) => folder.isDefault);
-
-  if (!defaultFolder) {
-    throw new Error("기본 폴더를 찾을 수 없습니다.");
-  }
 
   const normalizedDeletedIds = [...new Set(deletedFolderIds)];
-
-  if (normalizedDeletedIds.includes(defaultFolder.id)) {
-    throw new Error("기본 폴더는 삭제할 수 없습니다.");
-  }
 
   if (
     existingFolders.length - normalizedDeletedIds.length !==
@@ -645,10 +785,31 @@ export const updateBookmarkFolders = async (
     throw new Error("폴더 이름을 입력해 주세요.");
   }
 
-  const defaultDraft = folderDrafts.find((folder) => folder.id === defaultFolder.id);
+  if (
+    trimmedNames.some(
+      (folderName) =>
+        getFolderNameLength(folderName) > MAX_BOOKMARK_FOLDER_NAME_LENGTH,
+    )
+  ) {
+    throw new Error(
+      `폴더 이름은 ${MAX_BOOKMARK_FOLDER_NAME_LENGTH}자 이하로 입력해 주세요.`,
+    );
+  }
 
-  if (!defaultDraft) {
-    throw new Error("기본 폴더는 삭제할 수 없습니다.");
+  const pinnedDrafts = folderDrafts.filter((folder) => folder.isDefault);
+
+  if (pinnedDrafts.length !== 1) {
+    throw new Error(`${BOOKMARK_PINNED_FOLDER_LABEL}는 1개만 지정할 수 있습니다.`);
+  }
+
+  const pinnedFolder = pinnedDrafts[0];
+
+  if (!pinnedFolder) {
+    throw new Error(`${BOOKMARK_PINNED_FOLDER_LABEL}를 찾을 수 없습니다.`);
+  }
+
+  if (normalizedDeletedIds.includes(pinnedFolder.id)) {
+    throw new Error(`${BOOKMARK_PINNED_FOLDER_LABEL}는 삭제할 수 없습니다.`);
   }
 
   folderDrafts.forEach((folder) => {
@@ -666,7 +827,7 @@ export const updateBookmarkFolders = async (
   for (const deletedFolderId of normalizedDeletedIds) {
     const { error: moveError } = await supabase
       .from("bookmarks")
-      .update({ folder_id: defaultFolder.id })
+      .update({ folder_id: pinnedFolder.id })
       .eq("user_id", userId)
       .eq("folder_id", deletedFolderId);
 
@@ -689,7 +850,7 @@ export const updateBookmarkFolders = async (
           .delete()
           .eq("id", deletedFolderId)
           .eq("user_id", userId)
-          .neq("id", defaultFolder.id);
+          .neq("id", pinnedFolder.id);
 
         if (legacyDeleteError) {
           console.error("[updateBookmarkFolders] delete", legacyDeleteError.message);
@@ -710,38 +871,26 @@ export const updateBookmarkFolders = async (
     id: folder.id,
     name: resolvedNames[index] ?? folder.name.trim(),
     sort_order: index,
+    is_default: folder.isDefault,
   }));
 
+  // [ERROR FIX] 폴더명·고정 플래그를 한 번에 순차 업데이트하면 UNIQUE 제약 충돌
+  // 1) is_default 전부 해제 → 2) 임시 이름 → 3) 이름·순서 저장 → 4) 고정 폴더만 is_default=true
+  await clearUserFolderDefaultFlags(userId);
+  await stageFolderNamesForRename(
+    userId,
+    updates.map((update) => update.id),
+  );
+
   for (const update of updates) {
-    const { error } = await supabase
-      .from("bookmark_folders")
-      .update({
-        name: update.name,
-        sort_order: update.sort_order,
-      })
-      .eq("id", update.id)
-      .eq("user_id", userId);
-
-    if (error) {
-      if (isMissingFolderSortOrderError(error.message)) {
-        const { error: legacyError } = await supabase
-          .from("bookmark_folders")
-          .update({ name: update.name })
-          .eq("id", update.id)
-          .eq("user_id", userId);
-
-        if (legacyError) {
-          console.error("[updateBookmarkFolders]", legacyError.message);
-          throw new Error("폴더를 수정하지 못했습니다.");
-        }
-
-        continue;
-      }
-
-      console.error("[updateBookmarkFolders]", error.message);
-      throw new Error("폴더를 수정하지 못했습니다.");
-    }
+    await applyFolderNameAndSortOrder(userId, {
+      id: update.id,
+      name: update.name,
+      sort_order: update.sort_order,
+    });
   }
+
+  await assignPinnedFolderFlag(userId, pinnedFolder.id);
 
   return fetchUserFolders(userId);
 };
