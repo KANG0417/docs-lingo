@@ -137,8 +137,15 @@ export const DocReaderSection = (): ReactElement => {
               <div
                 role="tablist"
                 aria-label="입력 방식 선택"
-                className="mb-5 flex w-fit gap-1 rounded-lg bg-amber-100/80 p-1"
+                className="doc-input-mode-toggle mb-5 grid w-full max-w-xs grid-cols-2 rounded-lg bg-amber-100/80 p-1 sm:w-72"
               >
+                <span
+                  aria-hidden="true"
+                  className={clsx(
+                    "doc-input-mode-toggle-thumb",
+                    mode === "text" && "doc-input-mode-toggle-thumb--text",
+                  )}
+                />
                 {INPUT_MODES.map((inputMode) => (
                   <button
                     key={inputMode.id}
@@ -147,10 +154,10 @@ export const DocReaderSection = (): ReactElement => {
                     aria-selected={mode === inputMode.id}
                     onClick={() => changeMode(inputMode.id)}
                     className={clsx(
-                      "rounded-md border-2 px-4 py-2 text-sm font-semibold transition-colors",
+                      "relative z-10 rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-200",
                       mode === inputMode.id
-                        ? "border-[#0a1030] bg-[#0a1030] text-indigo-100 shadow-sm ring-2 ring-[#0a1030] ring-offset-1 ring-offset-amber-100/80"
-                        : "border-transparent text-amber-800/70 hover:text-amber-900",
+                        ? "text-indigo-100"
+                        : "text-amber-800/70 hover:text-amber-900",
                     )}
                   >
                     {inputMode.label}
@@ -159,27 +166,35 @@ export const DocReaderSection = (): ReactElement => {
               </div>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {mode === "url" ? (
-                  <input
-                    type="url"
-                    value={urlInput}
-                    onChange={(event) => handleUrlInputChange(event.target.value)}
-                    placeholder="https://example.com/docs"
-                    required
-                    disabled={isLoading}
-                    className="doc-reader-field doc-reader-field--url"
-                  />
-                ) : (
-                  <textarea
-                    value={textInput}
-                    onChange={(event) => setTextInput(event.target.value)}
-                    placeholder="읽을 텍스트를 붙여넣어 주세요."
-                    required
-                    disabled={isLoading}
-                    rows={10}
-                    className="font-doc-body memo-lines doc-reader-field doc-reader-field--textarea"
-                  />
-                )}
+                <div
+                  key={mode}
+                  className="doc-reader-field-transition"
+                  data-mode={mode}
+                >
+                  {mode === "url" ? (
+                    <input
+                      type="url"
+                      value={urlInput}
+                      onChange={(event) =>
+                        handleUrlInputChange(event.target.value)
+                      }
+                      placeholder="https://example.com/docs"
+                      required
+                      disabled={isLoading}
+                      className="doc-reader-field doc-reader-field--url"
+                    />
+                  ) : (
+                    <textarea
+                      value={textInput}
+                      onChange={(event) => setTextInput(event.target.value)}
+                      placeholder="읽을 텍스트를 붙여넣어 주세요."
+                      required
+                      disabled={isLoading}
+                      rows={10}
+                      className="font-doc-body memo-lines doc-reader-field doc-reader-field--textarea"
+                    />
+                  )}
+                </div>
 
                 <button
                   type="submit"

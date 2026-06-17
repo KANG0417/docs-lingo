@@ -6,6 +6,7 @@ import Kakao from "next-auth/providers/kakao";
 import Naver from "next-auth/providers/naver";
 import type { KakaoProfile } from "next-auth/providers/kakao";
 import type { NaverProfile } from "next-auth/providers/naver";
+import { SESSION_MAX_AGE_SECONDS } from "@/constants/auth";
 import { authConfig } from "@/lib/auth/auth-config";
 import { getSessionVersion, syncUserProfile } from "@/services/profile-service";
 
@@ -76,9 +77,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     jwt: async ({ token, user, trigger }) => {
+      const now = Math.floor(Date.now() / 1000);
+
       if (user?.id) {
         token.sub = user.id;
         token.sessionVersion = await getSessionVersion(user.id);
+        token.sessionExpiresAt = now + SESSION_MAX_AGE_SECONDS;
+      }
+
+      if (
+        typeof token.sessionExpiresAt !== "number" &&
+        typeof token.iat === "number"
+      ) {
+        token.sessionExpiresAt = token.iat + SESSION_MAX_AGE_SECONDS;
       }
 
       if (user?.name) {
@@ -101,9 +112,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return { ...token, exp: 0 };
       }
 
-      const now = Math.floor(Date.now() / 1000);
       const isExpired =
-        typeof token.exp === "number" && token.exp <= now;
+        (typeof token.exp === "number" && token.exp <= now) ||
+        (typeof token.sessionExpiresAt === "number" &&
+          token.sessionExpiresAt <= now);
 
       if (isExpired) {
         return { ...token, exp: 0 };
@@ -117,15 +129,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     session: ({ session, token }) => {
+      const now = Math.floor(Date.now() / 1000);
       const isExpired =
-        typeof token.exp === "number" &&
-        token.exp <= Math.floor(Date.now() / 1000);
+        (typeof token.exp === "number" && token.exp <= now) ||
+        (typeof token.sessionExpiresAt === "number" &&
+          token.sessionExpiresAt <= now);
 
       if (!token.sub || isExpired) {
         return session;
       }
 
       session.user.id = token.sub;
+
+      if (typeof token.sessionExpiresAt === "number") {
+        session.sessionExpiresAt = token.sessionExpiresAt;
+      }
 
       if (token.name) {
         session.user.name = token.name;

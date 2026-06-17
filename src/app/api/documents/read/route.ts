@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 export const POST = async (request: Request): Promise<NextResponse> => {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return NextResponse.json(
       { message: "로그인이 필요합니다." },
       { status: 401 },

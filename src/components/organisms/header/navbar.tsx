@@ -2,24 +2,49 @@
 
 import clsx from "clsx";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { BrandLogo } from "@/components/atoms/logo/brand-logo";
 import { UserMenu } from "@/components/molecules/menu/user-menu";
+import { AUTH_SIGNOUT_PATH } from "@/constants/auth";
 import { NAVBAR_SCROLL_THRESHOLD } from "@/constants/scroll";
 import { useWindowScroll } from "@/hooks/use-window-scroll";
 
 interface NavbarProps {
   nickname: string;
   image: string | null;
+  sessionExpiresAt?: number;
 }
 
-export const Navbar = ({ nickname, image }: NavbarProps): ReactElement => {
+export const Navbar = ({
+  nickname,
+  image,
+  sessionExpiresAt,
+}: NavbarProps): ReactElement => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
   const { isPastThreshold } = useWindowScroll({
     threshold: NAVBAR_SCROLL_THRESHOLD,
   });
   const showNavbarSurface = isPastThreshold || isUserMenuOpen;
+
+  useEffect(() => {
+    if (typeof sessionExpiresAt !== "number") {
+      return;
+    }
+
+    const expiresInMs = sessionExpiresAt * 1000 - Date.now();
+
+    if (expiresInMs <= 0) {
+      window.location.assign(AUTH_SIGNOUT_PATH);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      window.location.assign(AUTH_SIGNOUT_PATH);
+    }, expiresInMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [sessionExpiresAt]);
 
   return (
     <header

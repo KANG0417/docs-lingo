@@ -37,6 +37,7 @@ const ProfilePage = async (): Promise<ReactElement> => {
         <Navbar
           nickname={displayProfile.nickname}
           image={displayProfile.image}
+          sessionExpiresAt={session.sessionExpiresAt}
         />
       }
     >

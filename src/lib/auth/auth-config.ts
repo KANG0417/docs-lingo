@@ -18,9 +18,24 @@ export const authConfig = {
   },
   callbacks: {
     session: ({ session, token }) => {
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired =
+        (typeof token.exp === "number" && token.exp <= now) ||
+        (typeof token.sessionExpiresAt === "number" &&
+          token.sessionExpiresAt <= now);
+
+      if (isExpired) {
+        return session;
+      }
+
       if (token.sub) {
         session.user.id = token.sub;
       }
+
+      if (typeof token.sessionExpiresAt === "number") {
+        session.sessionExpiresAt = token.sessionExpiresAt;
+      }
+
       return session;
     },
     authorized: ({ auth }) => {

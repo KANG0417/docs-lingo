@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const BookmarksPage = async (): Promise<ReactElement> => {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect("/");
   }
 
@@ -27,6 +27,7 @@ const BookmarksPage = async (): Promise<ReactElement> => {
         <Navbar
           nickname={displayProfile.nickname}
           image={displayProfile.image}
+          sessionExpiresAt={session.sessionExpiresAt}
         />
       }
     >
