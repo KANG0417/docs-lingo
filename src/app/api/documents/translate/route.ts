@@ -11,7 +11,7 @@ import { validateOfficialDocumentUrl } from "@/lib/document/validate-official-do
 import {
   translateDocumentFromText,
   translateDocumentFromUrl,
-} from "@/services/translation-service";
+} from "@/services/translation/translation-orchestration-service";
 
 export const POST = async (request: Request): Promise<NextResponse> => {
   const session = await auth();

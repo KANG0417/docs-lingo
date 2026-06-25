@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
-import { splitTextByInlineMarkup } from "@/lib/translation/highlight-keywords";
-import { normalizeSummaryTerms } from "@/lib/translation/summary-terms-normalizer";
+import { splitTextByInlineMarkup } from "@/lib/translation/markup/highlight-keywords";
+import { normalizeSummaryTerms } from "@/lib/translation/markup/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
 
 interface KeywordSummaryProps {
@@ -41,11 +41,7 @@ export const KeywordSummary = ({
           key={item.term}
           className="font-doc-translation rounded-md border border-dashed border-amber-300 bg-white/70 px-4 py-3 text-sm leading-relaxed text-zinc-800"
         >
-          {item.isCoreKeyword ? (
-            <code className="keyword-chip">{item.term}</code>
-          ) : (
-            <span className="emphasis-underline">{item.term}</span>
-          )}
+          <code className="keyword-chip">{item.term}</code>
           <span className="mx-2 font-bold text-amber-700">:</span>
           <span>{renderDescriptionSegments(item.description)}</span>
         </li>

@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import {
-  deleteTranslation,
-  getTranslationById,
-} from "@/services/translation-service";
+import { deleteTranslation } from "@/services/translation/translation-persistence-service";
+import { getTranslationById } from "@/services/translation/translation-history-service";
 
 export const runtime = "nodejs";
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { moveBookmarkToFolder } from "@/services/bookmark-service";
+import { moveBookmarkToFolder } from "@/services/bookmark/bookmark-item-service";
 import type { MoveBookmarkPayload } from "@/types/bookmark";
 
 export const PATCH = async (request: Request): Promise<NextResponse> => {

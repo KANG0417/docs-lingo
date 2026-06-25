@@ -1,16 +1,12 @@
-import { DOCUMENT_FETCH_TIMEOUT_MS } from "@/constants/document-pipeline";
 import { normalizeDocumentUrl } from "@/lib/document/normalize-document-url";
-
-interface FetchedMarkdownDocument {
-  url: string;
-  markdown: string;
-}
+import { fetchOfficialDocMarkdown } from "@/lib/document/fetch-official-doc-markdown";
 
 export const isNextJsDocUrl = (url: string): boolean => {
   try {
     const parsed = new URL(url);
     return (
-      parsed.hostname === "nextjs.org" && parsed.pathname.startsWith("/docs/")
+      parsed.hostname === "nextjs.org" &&
+      (parsed.pathname === "/docs" || parsed.pathname.startsWith("/docs/"))
     );
   } catch {
     return false;
@@ -23,37 +19,16 @@ export const getMarkdownDocUrl = (url: string): string => {
 };
 
 export const fetchDocMarkdown = async (
-  url: string,
-): Promise<FetchedMarkdownDocument | null> => {
-  if (!isNextJsDocUrl(url)) {
+  pageUrl: string,
+): Promise<{ url: string; markdown: string } | null> => {
+  const result = await fetchOfficialDocMarkdown(pageUrl);
+
+  if (!result) {
     return null;
   }
 
-  const markdownUrl = getMarkdownDocUrl(url);
-
-  try {
-    const response = await fetch(markdownUrl, {
-      signal: AbortSignal.timeout(DOCUMENT_FETCH_TIMEOUT_MS),
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; DocsLingoBot/1.0)",
-      },
-    });
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const markdown = await response.text();
-
-    if (!markdown.trim()) {
-      return null;
-    }
-
-    return {
-      url: markdownUrl,
-      markdown,
-    };
-  } catch {
-    return null;
-  }
+  return {
+    url: result.url,
+    markdown: result.markdown,
+  };
 };

@@ -83,3 +83,20 @@ ALTER TABLE public.translations
 
 ALTER TABLE public.translations
     ALTER COLUMN document_code_blocks SET NOT NULL;
+
+ALTER TABLE public.translations
+    ADD COLUMN IF NOT EXISTS summary_content text;
+
+ALTER TABLE public.translations
+    ADD COLUMN IF NOT EXISTS document_type text;
+
+ALTER TABLE public.translations
+    ADD COLUMN IF NOT EXISTS translation_warnings jsonb;
+
+UPDATE public.translations
+SET translation_warnings = '[]'::jsonb
+WHERE translation_warnings IS NULL;
+
+-- 핵심요약과 별도로 보여줄 전체(직역) 번역 — 처음 탭 클릭 시 생성되어 캐시됨
+ALTER TABLE public.translations
+    ADD COLUMN IF NOT EXISTS full_content text;

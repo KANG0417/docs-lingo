@@ -1,5 +1,10 @@
 import type { DocumentCodeBlock } from "@/types/document-code-block";
+import type { DocumentExtractionSource } from "@/constants/document-pipeline";
 import type { DocumentImage } from "@/types/document-image";
+import type {
+  DocumentType,
+  ClaudeTranslationRequest,
+} from "@/types/claude-document-translation";
 
 export interface RefinedParagraph {
   index: number;
@@ -17,4 +22,8 @@ export interface RefinedDocument {
   documentCodeBlocks: DocumentCodeBlock[];
   originalContent: string;
   aiInput: string;
+  summaryAiInput: string;
+  extractionSource: DocumentExtractionSource;
+  documentType: DocumentType;
+  claudeTranslationRequest: ClaudeTranslationRequest;
 }

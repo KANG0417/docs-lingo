@@ -1,10 +1,17 @@
 export const OFFICIAL_DOC_PATTERNS: RegExp[] = [
   /docs\.[a-z0-9-]+\.(com|io|dev|org)/,
   /[a-z0-9-]+\.dev\/docs/,
+  /[a-z0-9-]+\.dev\/(learn|reference|guide|api)(\/|$)/,
+  /[a-z0-9-]+\.(com|io|dev|org|net)\/(docs|documentation|guide|guides|learn|reference|api|manual|handbook|tutorial|tutorials)(\/|$)/,
   /developer\.[a-z0-9-]+\.com/,
   /\.readthedocs\.io/,
   /github\.io\/.*\/(docs|guide)/,
+  /docs\.github\.com/,
   /docs\.python\.org/,
+  /developer\.mozilla\.org/,
+  /developer\.chrome\.com\/docs/,
+  /learn\.microsoft\.com/,
+  /nodejs\.org\/(api|docs)(\/|$)/,
 ];
 
 export const UNOFFICIAL_DOC_INDICATORS: RegExp[] = [

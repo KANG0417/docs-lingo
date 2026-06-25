@@ -24,12 +24,17 @@ const toTranslationResult = (
     id: item.id,
     documentId: item.documentId,
     title: item.title,
+    fullTitle: item.fullTitle,
     url: item.url,
     originalContent: item.originalContent ?? "",
+    translatedSummaryContent: item.translatedSummaryContent,
+    translatedFullContent: item.translatedFullContent,
     translatedContent: item.translatedContent,
     summaryTerms: item.summaryTerms,
     documentImages: item.documentImages,
     documentCodeBlocks: item.documentCodeBlocks,
+    documentType: item.documentType,
+    warnings: item.warnings,
     createdAt: item.createdAt,
   };
 };
@@ -487,7 +492,6 @@ export const BookmarksSection = (): ReactElement => {
           <div className="bookmarks-reader-panel">
             <TranslationResultSection
               result={selectedTranslation}
-              showTranslationResultLabel={false}
               onClose={handleCloseDocument}
             />
           </div>

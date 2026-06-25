@@ -4,6 +4,11 @@ import {
   MAX_AI_INPUT_LENGTH,
   MAX_PARAGRAPHS_FOR_AI,
 } from "@/constants/document-pipeline";
+import {
+  isMarkdownAtxHeadingLine,
+  isOfficialDocCalloutLine,
+  isOfficialDocNavNoise,
+} from "@/lib/document-pipeline/official-doc-patterns";
 import type { RefinedParagraph } from "@/types/document-pipeline";
 
 const NOISE_PATTERNS: RegExp[] = [
@@ -29,8 +34,18 @@ const NOISE_PATTERNS: RegExp[] = [
 const scoreParagraph = (paragraph: string): number => {
   let score = Math.min(paragraph.length / 120, 4);
 
-  if (/^#{1,6}\s/.test(paragraph) || /^[A-Z][^.!?]{0,80}$/.test(paragraph)) {
+  const firstLine = paragraph.split("\n")[0]?.trim() ?? "";
+
+  if (
+    isMarkdownAtxHeadingLine(firstLine) ||
+    /^#{1,6}\s/.test(paragraph) ||
+    /^[A-Z][^.!?]{0,80}$/.test(firstLine)
+  ) {
     score += 2;
+  }
+
+  if (isOfficialDocCalloutLine(firstLine)) {
+    score += 2.5;
   }
 
   if (
@@ -40,7 +55,10 @@ const scoreParagraph = (paragraph: string): number => {
     score += 2;
   }
 
-  if (NOISE_PATTERNS.some((pattern) => pattern.test(paragraph))) {
+  if (
+    NOISE_PATTERNS.some((pattern) => pattern.test(paragraph)) ||
+    isOfficialDocNavNoise(paragraph)
+  ) {
     score -= 6;
   }
 
@@ -61,22 +79,20 @@ const buildRefinedParagraphs = (
   }));
 };
 
-const selectByImportance = (
+const capParagraphsByOrder = (
   paragraphs: RefinedParagraph[],
+  maxParagraphs: number,
+  maxLength: number,
 ): RefinedParagraph[] => {
-  const rankedParagraphs = [...paragraphs]
-    .filter((paragraph) => paragraph.score > IMPORTANCE_SCORE_THRESHOLD)
-    .sort((left, right) => right.score - left.score);
-
   const selectedParagraphs: RefinedParagraph[] = [];
   let totalLength = 0;
 
-  rankedParagraphs.forEach((paragraph) => {
-    if (selectedParagraphs.length >= MAX_PARAGRAPHS_FOR_AI) {
+  paragraphs.forEach((paragraph) => {
+    if (selectedParagraphs.length >= maxParagraphs) {
       return;
     }
 
-    if (totalLength + paragraph.text.length > MAX_AI_INPUT_LENGTH) {
+    if (totalLength + paragraph.text.length > maxLength) {
       return;
     }
 
@@ -84,13 +100,31 @@ const selectByImportance = (
     totalLength += paragraph.text.length;
   });
 
+  return selectedParagraphs;
+};
+
+const selectByImportance = (
+  paragraphs: RefinedParagraph[],
+): RefinedParagraph[] => {
+  const rankedParagraphs = [...paragraphs]
+    .filter((paragraph) => paragraph.score > IMPORTANCE_SCORE_THRESHOLD)
+    .sort((left, right) => right.score - left.score);
+
+  const selectedParagraphs = capParagraphsByOrder(
+    rankedParagraphs,
+    MAX_PARAGRAPHS_FOR_AI,
+    MAX_AI_INPUT_LENGTH,
+  );
+
   if (selectedParagraphs.length > 0) {
     return selectedParagraphs.sort((left, right) => left.index - right.index);
   }
 
-  return paragraphs
-    .slice(0, MAX_PARAGRAPHS_FOR_AI)
-    .filter((paragraph) => paragraph.text.length <= MAX_AI_INPUT_LENGTH);
+  return capParagraphsByOrder(
+    paragraphs,
+    MAX_PARAGRAPHS_FOR_AI,
+    MAX_AI_INPUT_LENGTH,
+  );
 };
 
 export const filterImportantParagraphs = (
@@ -99,7 +133,11 @@ export const filterImportantParagraphs = (
   const refinedParagraphs = buildRefinedParagraphs(paragraphs);
 
   if (!ENABLE_IMPORTANCE_FILTER) {
-    return refinedParagraphs.slice(0, MAX_PARAGRAPHS_FOR_AI);
+    return capParagraphsByOrder(
+      refinedParagraphs,
+      MAX_PARAGRAPHS_FOR_AI,
+      MAX_AI_INPUT_LENGTH,
+    );
   }
 
   return selectByImportance(refinedParagraphs);

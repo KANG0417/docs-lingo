@@ -3,9 +3,9 @@ import { auth } from "@/lib/auth/auth";
 import {
   addDocumentBookmark,
   getDocumentBookmarkStatus,
-  getUserBookmarks,
   removeDocumentBookmark,
-} from "@/services/bookmark-service";
+} from "@/services/bookmark/bookmark-item-service";
+import { getUserBookmarks } from "@/services/bookmark/bookmark-list-service";
 import type { ToggleDocumentBookmarkPayload } from "@/types/bookmark";
 
 export const GET = async (request: Request): Promise<NextResponse> => {

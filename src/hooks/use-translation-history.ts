@@ -5,8 +5,8 @@ import { HISTORY_PAGE_SIZE } from "@/constants/translation-history";
 import {
   readStoredHistoryPage,
   writeStoredHistoryPage,
-} from "@/lib/translation/translation-history-page-storage";
-import { getTranslationDayRange } from "@/lib/translation/translation-day-range";
+} from "@/lib/translation/history/translation-history-page-storage";
+import { getTranslationDayRange } from "@/lib/translation/history/translation-day-range";
 import {
   deleteTranslationHistoryItem,
   getTranslationHistory,

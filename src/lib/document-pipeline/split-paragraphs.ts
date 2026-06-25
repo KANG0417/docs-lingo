@@ -5,6 +5,7 @@ import {
   QUESTION_HEADING_MAX_LENGTH,
   QUESTION_HEADING_MAX_WORDS,
 } from "@/constants/document-pipeline";
+import { isOfficialDocNavNoise } from "@/lib/document-pipeline/official-doc-patterns";
 
 interface LineContext {
   afterListIntro: boolean;
@@ -240,6 +241,10 @@ const flushParagraph = (
   paragraphs: string[],
 ): string[] => {
   const paragraph = normalizeParagraphBlock(lines);
+
+  if (paragraph && isOfficialDocNavNoise(paragraph)) {
+    return [];
+  }
 
   if (
     paragraph.length >= MIN_PARAGRAPH_LENGTH ||

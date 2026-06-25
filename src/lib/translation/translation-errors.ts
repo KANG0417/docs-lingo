@@ -1,12 +1,12 @@
 export type TranslationErrorCode =
-  | "GEMINI_NO_API_KEY"
-  | "GEMINI_INVALID_API_KEY"
-  | "GEMINI_BILLING_DEPLETED"
-  | "GEMINI_QUOTA_EXCEEDED"
-  | "GEMINI_MODEL_NOT_FOUND"
-  | "GEMINI_EMPTY_RESPONSE"
-  | "GEMINI_JSON_PARSE"
-  | "GEMINI_UNKNOWN"
+  | "CLAUDE_NO_API_KEY"
+  | "CLAUDE_INVALID_API_KEY"
+  | "CLAUDE_BILLING_DEPLETED"
+  | "CLAUDE_QUOTA_EXCEEDED"
+  | "CLAUDE_MODEL_NOT_FOUND"
+  | "CLAUDE_EMPTY_RESPONSE"
+  | "CLAUDE_JSON_PARSE"
+  | "CLAUDE_UNKNOWN"
   | "FALLBACK_NETWORK"
   | "FALLBACK_RATE_LIMIT"
   | "FALLBACK_QUOTA_EXCEEDED"
@@ -17,6 +17,7 @@ export type TranslationErrorCode =
   | "UNOFFICIAL_DOCUMENT"
   | "TRANSLATION_ALL_FAILED";
 
+import Anthropic from "@anthropic-ai/sdk";
 import { OFFICIAL_DOCUMENT_ONLY_MESSAGE } from "@/constants/official-document";
 
 interface TranslationErrorContext {
@@ -24,7 +25,7 @@ interface TranslationErrorContext {
   statusCode?: number;
 }
 
-const GEMINI_KEY_GUIDE = ".env.local의 GEMINI_API_KEY";
+const ANTHROPIC_KEY_GUIDE = ".env.local의 ANTHROPIC_API_KEY";
 
 export class TranslationError extends Error {
   public readonly code: TranslationErrorCode;
@@ -42,130 +43,120 @@ export class TranslationError extends Error {
   }
 }
 
-const isInvalidApiKeyMessage = (message: string): boolean => {
-  const loweredMessage = message.toLowerCase();
-  return (
-    loweredMessage.includes("api key not valid") ||
-    loweredMessage.includes("api_key_invalid") ||
-    loweredMessage.includes("invalid api key") ||
-    loweredMessage.includes("permission_denied") ||
-    loweredMessage.includes("unauthorized")
-  );
-};
-
 const isBillingDepletedMessage = (message: string): boolean => {
   const loweredMessage = message.toLowerCase();
   return (
-    loweredMessage.includes("prepayment credits are depleted") ||
-    loweredMessage.includes("billing account") ||
+    loweredMessage.includes("credit") ||
+    loweredMessage.includes("billing") ||
     loweredMessage.includes("payment required")
   );
 };
 
-const isQuotaMessage = (message: string): boolean => {
-  const loweredMessage = message.toLowerCase();
-  return (
-    loweredMessage.includes("quota") ||
-    loweredMessage.includes("rate limit") ||
-    loweredMessage.includes("resource exhausted") ||
-    loweredMessage.includes("limit: 0") ||
-    loweredMessage.includes("too many requests")
-  );
-};
-
-const isModelNotFoundMessage = (message: string): boolean => {
-  const loweredMessage = message.toLowerCase();
-  return (
-    loweredMessage.includes("not found") ||
-    loweredMessage.includes("is not supported") ||
-    loweredMessage.includes("no longer available")
-  );
-};
-
-const createGeminiNoApiKeyError = (
+const createClaudeNoApiKeyError = (
   originalMessage: string,
 ): TranslationError => {
   return new TranslationError(
-    "GEMINI_NO_API_KEY",
-    `AI API 키가 등록되지 않았습니다.\n${GEMINI_KEY_GUIDE}에 Google Gemini API 키를 설정해 주세요.`,
+    "CLAUDE_NO_API_KEY",
+    `AI API 키가 등록되지 않았습니다.\n${ANTHROPIC_KEY_GUIDE}에 Anthropic API 키를 설정해 주세요.`,
     originalMessage,
   );
 };
 
-const createGeminiInvalidApiKeyError = (
+const createClaudeInvalidApiKeyError = (
   originalMessage: string,
   hasUserApiKey: boolean,
 ): TranslationError => {
   return new TranslationError(
-    "GEMINI_INVALID_API_KEY",
+    "CLAUDE_INVALID_API_KEY",
     hasUserApiKey
-      ? "등록한 AI API 키가 올바르지 않습니다.\nGoogle AI Studio에서 발급한 키인지 확인해 주세요."
-      : `서버 AI API 키가 올바르지 않습니다.\n${GEMINI_KEY_GUIDE} 값을 확인해 주세요.`,
+      ? "등록한 AI API 키가 올바르지 않습니다.\nAnthropic Console(https://console.anthropic.com/settings/keys)에서 발급한 키인지 확인해 주세요."
+      : `서버 AI API 키가 올바르지 않습니다.\n${ANTHROPIC_KEY_GUIDE} 값을 확인해 주세요.`,
     originalMessage,
   );
 };
 
-const createGeminiBillingDepletedError = (
+const createClaudeBillingDepletedError = (
   originalMessage: string,
   hasUserApiKey: boolean,
 ): TranslationError => {
   return new TranslationError(
-    "GEMINI_BILLING_DEPLETED",
+    "CLAUDE_BILLING_DEPLETED",
     hasUserApiKey
-      ? "등록한 AI API 키의 크레딧이 모두 소진되었습니다.\nGoogle AI Studio에서 결제 상태를 확인하거나 다른 API 키를 등록해 주세요."
-      : `AI 번역 크레딧이 모두 소진되었습니다.\n${GEMINI_KEY_GUIDE}에 유효한 Google Gemini API 키를 설정해 주세요.`,
+      ? "등록한 AI API 키의 크레딧이 모두 소진되었습니다.\nAnthropic Console에서 결제 상태를 확인하거나 다른 API 키를 등록해 주세요."
+      : `AI 번역 크레딧이 모두 소진되었습니다.\n${ANTHROPIC_KEY_GUIDE}에 유효한 Anthropic API 키를 설정해 주세요.`,
     originalMessage,
   );
 };
 
-const createGeminiQuotaError = (
+const createClaudeQuotaError = (
   originalMessage: string,
   hasUserApiKey: boolean,
 ): TranslationError => {
   return new TranslationError(
-    "GEMINI_QUOTA_EXCEEDED",
+    "CLAUDE_QUOTA_EXCEEDED",
     hasUserApiKey
-      ? "AI 사용 한도를 초과했습니다.\n잠시 후 다시 시도하거나 다른 모델명을 사용해 보세요."
-      : `AI 사용 한도를 초과했습니다.\n${GEMINI_KEY_GUIDE}에 설정된 API 키 한도를 확인해 주세요.`,
+      ? "AI 사용 한도를 초과했습니다.\n잠시 후 다시 시도해 주세요."
+      : `AI 사용 한도를 초과했습니다.\n${ANTHROPIC_KEY_GUIDE}에 설정된 API 키 한도를 확인해 주세요.`,
     originalMessage,
   );
 };
 
-export const normalizeGeminiError = (
+/**
+ * Anthropic SDK는 HTTP 상태별로 타입이 분리된 예외 클래스를 던진다 — 메시지
+ * 문자열 매칭보다 `instanceof` 분기가 더 정확하고 안정적이다.
+ */
+export const normalizeClaudeError = (
   error: unknown,
   context: TranslationErrorContext = {},
 ): TranslationError => {
-  const originalMessage =
-    error instanceof Error ? error.message : "Gemini API 호출 실패";
   const hasUserApiKey = Boolean(context.hasUserApiKey);
+  const originalMessage =
+    error instanceof Error ? error.message : "Claude API 호출 실패";
 
-  if (originalMessage.includes("사용 가능한 Gemini API 키가 없습니다")) {
-    return createGeminiNoApiKeyError(originalMessage);
+  if (originalMessage.includes("사용 가능한 Claude API 키가 없습니다")) {
+    return createClaudeNoApiKeyError(originalMessage);
   }
 
-  if (isInvalidApiKeyMessage(originalMessage)) {
-    return createGeminiInvalidApiKeyError(originalMessage, hasUserApiKey);
+  if (error instanceof Anthropic.AuthenticationError) {
+    return createClaudeInvalidApiKeyError(originalMessage, hasUserApiKey);
   }
 
-  if (isBillingDepletedMessage(originalMessage)) {
-    return createGeminiBillingDepletedError(originalMessage, hasUserApiKey);
+  if (error instanceof Anthropic.PermissionDeniedError) {
+    return isBillingDepletedMessage(originalMessage)
+      ? createClaudeBillingDepletedError(originalMessage, hasUserApiKey)
+      : createClaudeInvalidApiKeyError(originalMessage, hasUserApiKey);
   }
 
-  if (isQuotaMessage(originalMessage)) {
-    return createGeminiQuotaError(originalMessage, hasUserApiKey);
+  if (error instanceof Anthropic.RateLimitError) {
+    return createClaudeQuotaError(originalMessage, hasUserApiKey);
   }
 
-  if (isModelNotFoundMessage(originalMessage)) {
+  if (error instanceof Anthropic.NotFoundError) {
     return new TranslationError(
-      "GEMINI_MODEL_NOT_FOUND",
-      "선택한 AI 모델을 사용할 수 없습니다.\n모델명을 gemini-3.1-flash-lite로 변경해 보세요.",
+      "CLAUDE_MODEL_NOT_FOUND",
+      "선택한 AI 모델을 사용할 수 없습니다.\n잠시 후 다시 시도해 주세요.",
       originalMessage,
     );
   }
 
-  if (originalMessage.includes("응답을 받지 못했습니다")) {
+  if (error instanceof Anthropic.BadRequestError) {
+    if (isBillingDepletedMessage(originalMessage)) {
+      return createClaudeBillingDepletedError(originalMessage, hasUserApiKey);
+    }
+
     return new TranslationError(
-      "GEMINI_EMPTY_RESPONSE",
+      "CLAUDE_UNKNOWN",
+      "AI 번역 요청을 처리하지 못했습니다.\n잠시 후 다시 시도해 주세요.",
+      originalMessage,
+    );
+  }
+
+  if (
+    originalMessage.includes("응답을 받지 못했습니다") ||
+    originalMessage.includes("안전 정책에 따라 응답을 거부")
+  ) {
+    return new TranslationError(
+      "CLAUDE_EMPTY_RESPONSE",
       "AI에서 번역 결과를 받지 못했습니다.\n잠시 후 다시 시도해 주세요.",
       originalMessage,
     );
@@ -177,14 +168,22 @@ export const normalizeGeminiError = (
     originalMessage.includes("Unexpected token")
   ) {
     return new TranslationError(
-      "GEMINI_JSON_PARSE",
+      "CLAUDE_JSON_PARSE",
       "AI 응답을 처리하지 못했습니다.\n잠시 후 다시 시도해 주세요.",
       originalMessage,
     );
   }
 
+  if (error instanceof Anthropic.APIConnectionError) {
+    return new TranslationError(
+      "CLAUDE_UNKNOWN",
+      "AI 서버에 연결하지 못했습니다.\n인터넷 연결을 확인한 뒤 다시 시도해 주세요.",
+      originalMessage,
+    );
+  }
+
   return new TranslationError(
-    "GEMINI_UNKNOWN",
+    "CLAUDE_UNKNOWN",
     "AI 번역 중 오류가 발생했습니다.\n잠시 후 다시 시도해 주세요.",
     originalMessage,
   );
@@ -216,7 +215,7 @@ export const normalizeFallbackError = (
   ) {
     return new TranslationError(
       "FALLBACK_QUOTA_EXCEEDED",
-      `무료 대체 번역 한도가 초과되었습니다.\n${GEMINI_KEY_GUIDE}에 Google Gemini API 키를 설정해 주세요.`,
+      `무료 대체 번역 한도가 초과되었습니다.\n${ANTHROPIC_KEY_GUIDE}에 Anthropic API 키를 설정해 주세요.`,
       originalMessage,
     );
   }
@@ -247,33 +246,33 @@ export const normalizeFallbackError = (
 
   return new TranslationError(
     "FALLBACK_UNKNOWN",
-    `번역에 실패했습니다.\n${GEMINI_KEY_GUIDE}에 Google Gemini API 키가 설정되어 있는지 확인해 보세요.`,
+    `번역에 실패했습니다.\n${ANTHROPIC_KEY_GUIDE}에 Anthropic API 키가 설정되어 있는지 확인해 보세요.`,
     originalMessage,
   );
 };
 
 const getPrimaryError = (
-  geminiError: TranslationError | null,
+  claudeError: TranslationError | null,
   fallbackError: TranslationError,
 ): TranslationError => {
-  if (!geminiError) {
+  if (!claudeError) {
     return fallbackError;
   }
 
-  // Gemini가 실패한 경우 MyMemory 폴백 메시지보다 Gemini 원인을 우선 노출
-  return geminiError;
+  // Claude가 실패한 경우 MyMemory 폴백 메시지보다 Claude 원인을 우선 노출
+  return claudeError;
 };
 
 export const combineTranslationErrors = (
-  geminiError: TranslationError | null,
+  claudeError: TranslationError | null,
   fallbackError: TranslationError,
 ): TranslationError => {
-  const primaryError = getPrimaryError(geminiError, fallbackError);
+  const primaryError = getPrimaryError(claudeError, fallbackError);
 
   return new TranslationError(
     "TRANSLATION_ALL_FAILED",
     primaryError.message,
-    `${geminiError?.originalMessage ?? ""} | ${fallbackError.originalMessage}`,
+    `${claudeError?.originalMessage ?? ""} | ${fallbackError.originalMessage}`,
   );
 };
 
@@ -327,11 +326,11 @@ export const getTranslationErrorStatus = (
   error: TranslationError,
 ): number => {
   switch (error.code) {
-    case "GEMINI_NO_API_KEY":
-    case "GEMINI_INVALID_API_KEY":
-    case "GEMINI_BILLING_DEPLETED":
+    case "CLAUDE_NO_API_KEY":
+    case "CLAUDE_INVALID_API_KEY":
+    case "CLAUDE_BILLING_DEPLETED":
       return 400;
-    case "GEMINI_QUOTA_EXCEEDED":
+    case "CLAUDE_QUOTA_EXCEEDED":
     case "FALLBACK_RATE_LIMIT":
     case "FALLBACK_QUOTA_EXCEEDED":
       return 429;

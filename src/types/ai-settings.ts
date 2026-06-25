@@ -1,4 +1,4 @@
-export type AiProvider = "gemini";
+export type AiProvider = "claude";
 
 export interface UserAiCredentials {
   provider: AiProvider;

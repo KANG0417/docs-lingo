@@ -22,20 +22,31 @@ CREATE TABLE IF NOT EXISTS public.profiles
 CREATE TABLE IF NOT EXISTS public.user_ai_settings
 (
     user_id uuid NOT NULL,
-    provider text NOT NULL DEFAULT 'gemini',
+    provider text NOT NULL DEFAULT 'claude',
     api_key text,
     model text DEFAULT 'auto',
     created_at timestamp with time zone NOT NULL DEFAULT now(),
     updated_at timestamp with time zone NOT NULL DEFAULT now(),
     CONSTRAINT user_ai_settings_pkey PRIMARY KEY (user_id),
-    CONSTRAINT user_ai_settings_provider_check CHECK (provider IN ('gemini')),
+    CONSTRAINT user_ai_settings_provider_check CHECK (provider IN ('claude')),
     CONSTRAINT "user_ai_settings_user_id_fkey" FOREIGN KEY (user_id)
         REFERENCES public.profiles (id)
         ON DELETE CASCADE
 );
 
+-- Gemini -> Claude 전환: 기존 행의 provider 값을 갱신하고 제약을 다시 건다
+UPDATE public.user_ai_settings
+SET provider = 'claude'
+WHERE provider = 'gemini';
+
 ALTER TABLE public.user_ai_settings
-    ADD COLUMN IF NOT EXISTS provider text NOT NULL DEFAULT 'gemini';
+    DROP CONSTRAINT IF EXISTS user_ai_settings_provider_check;
+
+ALTER TABLE public.user_ai_settings
+    ADD CONSTRAINT user_ai_settings_provider_check CHECK (provider IN ('claude'));
+
+ALTER TABLE public.user_ai_settings
+    ADD COLUMN IF NOT EXISTS provider text NOT NULL DEFAULT 'claude';
 
 ALTER TABLE public.user_ai_settings
     ADD COLUMN IF NOT EXISTS api_key text;

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { getTranslationHistoryDateKeys } from "@/services/translation-service";
+import { getTranslationHistoryDateKeys } from "@/services/translation/translation-history-service";
 
 export const GET = async (): Promise<NextResponse> => {
   const session = await auth();

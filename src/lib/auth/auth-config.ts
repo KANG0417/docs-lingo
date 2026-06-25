@@ -1,5 +1,6 @@
 import type { NextAuthConfig } from "next-auth";
 import { SESSION_MAX_AGE_SECONDS } from "@/constants/auth";
+import { isSessionExpiredAt } from "@/lib/auth/session-expiration";
 
 // 미들웨어(proxy)에서도 사용하는 edge-safe 공통 설정.
 // 어댑터/프로바이더처럼 Node 전용 의존성은 lib/auth.ts에서만 추가한다.
@@ -21,8 +22,7 @@ export const authConfig = {
       const now = Math.floor(Date.now() / 1000);
       const isExpired =
         (typeof token.exp === "number" && token.exp <= now) ||
-        (typeof token.sessionExpiresAt === "number" &&
-          token.sessionExpiresAt <= now);
+        isSessionExpiredAt(token.sessionExpiresAt, now);
 
       if (isExpired) {
         return session;

@@ -1,4 +1,5 @@
 import { HISTORY_PAGE_SIZE } from "@/constants/translation-history";
+import type { TranslationErrorCode } from "@/lib/translation/translation-errors";
 import type {
   DocumentTranslationResult,
   TranslationHistoryDateKeysResponse,
@@ -6,6 +7,31 @@ import type {
   TranslationHistoryQuery,
   TranslationHistoryResponse,
 } from "@/types/translation";
+
+interface ApiErrorResponse {
+  message?: string;
+  code?: TranslationErrorCode;
+}
+
+export class TranslationRequestError extends Error {
+  public readonly code?: TranslationErrorCode;
+  public readonly status: number;
+
+  constructor(message: string, status: number, code?: TranslationErrorCode) {
+    super(message);
+    this.name = "TranslationRequestError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+const parseErrorResponse = async (response: Response): Promise<ApiErrorResponse> => {
+  try {
+    return (await response.json()) as ApiErrorResponse;
+  } catch {
+    return {};
+  }
+};
 
 const requestTranslation = async (
   payload: { url: string } | { text: string },
@@ -17,8 +43,12 @@ const requestTranslation = async (
   });
 
   if (!response.ok) {
-    const { message } = (await response.json()) as { message: string };
-    throw new Error(message);
+    const { message, code } = await parseErrorResponse(response);
+    throw new TranslationRequestError(
+      message ?? `번역 요청에 실패했습니다. (HTTP ${response.status})`,
+      response.status,
+      code,
+    );
   }
 
   return (await response.json()) as DocumentTranslationResult;
@@ -28,6 +58,27 @@ export const translateDocumentFromUrl = async (
   url: string,
 ): Promise<DocumentTranslationResult> => {
   return requestTranslation({ url });
+};
+
+export const fetchFullTranslation = async (
+  translationId: string,
+  originalContent?: string,
+): Promise<{ translatedFullContent: string }> => {
+  const response = await fetch("/api/documents/translate/full", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ translationId, originalContent }),
+  });
+
+  if (!response.ok) {
+    const { message } = await parseErrorResponse(response);
+    throw new TranslationRequestError(
+      message ?? `전체 번역 요청에 실패했습니다. (HTTP ${response.status})`,
+      response.status,
+    );
+  }
+
+  return (await response.json()) as { translatedFullContent: string };
 };
 
 export const translateDocumentFromText = async (

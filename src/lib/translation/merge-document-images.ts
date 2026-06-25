@@ -1,13 +1,13 @@
 import type { DocumentImage } from "@/types/document-image";
 
-interface GeminiImageDescription {
+interface ClaudeImageDescription {
   imageId: string;
   description: string;
 }
 
 export const mergeDocumentImageCaptions = (
   images: DocumentImage[],
-  descriptions: GeminiImageDescription[] = [],
+  descriptions: ClaudeImageDescription[] = [],
 ): DocumentImage[] => {
   const descriptionMap = new Map<string, string>();
 

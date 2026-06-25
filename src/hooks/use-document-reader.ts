@@ -36,7 +36,6 @@ export const useDocumentReader = (): UseDocumentReaderReturn => {
   const readFromUrl = async (url: string): Promise<void> => {
     setIsLoading(true);
     setErrorMessage(null);
-    setTranslationResult(null);
 
     try {
       const result = await translateDocumentFromUrl(url);
@@ -55,7 +54,6 @@ export const useDocumentReader = (): UseDocumentReaderReturn => {
   const readFromText = async (text: string): Promise<void> => {
     setIsLoading(true);
     setErrorMessage(null);
-    setTranslationResult(null);
 
     try {
       const result = await translateDocumentFromText(text);

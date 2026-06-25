@@ -6,9 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test:auth": "node --preserve-symlinks-main tests/auth/session-expiration.test.js",
+    "test:translation": "node --preserve-symlinks-main tests/translation/summary-consistency.test.js",
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
     "@auth/supabase-adapter": "^1.11.2",
     "@mozilla/readability": "^0.6.0",
     "@supabase/supabase-js": "^2.108.1",

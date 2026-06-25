@@ -6,8 +6,11 @@ import Kakao from "next-auth/providers/kakao";
 import Naver from "next-auth/providers/naver";
 import type { KakaoProfile } from "next-auth/providers/kakao";
 import type { NaverProfile } from "next-auth/providers/naver";
-import { SESSION_MAX_AGE_SECONDS } from "@/constants/auth";
 import { authConfig } from "@/lib/auth/auth-config";
+import {
+  isSessionExpiredAt,
+  resolveSessionExpiresAt,
+} from "@/lib/auth/session-expiration";
 import { getSessionVersion, syncUserProfile } from "@/services/profile-service";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -82,15 +85,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user?.id) {
         token.sub = user.id;
         token.sessionVersion = await getSessionVersion(user.id);
-        token.sessionExpiresAt = now + SESSION_MAX_AGE_SECONDS;
+        token.sessionExpiresAt = resolveSessionExpiresAt({ nowMs: now * 1000 });
       }
 
-      if (
-        typeof token.sessionExpiresAt !== "number" &&
-        typeof token.iat === "number"
-      ) {
-        token.sessionExpiresAt = token.iat + SESSION_MAX_AGE_SECONDS;
-      }
+      token.sessionExpiresAt = resolveSessionExpiresAt({
+        issuedAt: typeof token.iat === "number" ? token.iat : undefined,
+        existingExpiresAt:
+          typeof token.sessionExpiresAt === "number"
+            ? token.sessionExpiresAt
+            : undefined,
+        nowMs: now * 1000,
+      });
+      token.exp = token.sessionExpiresAt;
 
       if (user?.name) {
         token.name = user.name;
@@ -114,14 +120,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       const isExpired =
         (typeof token.exp === "number" && token.exp <= now) ||
-        (typeof token.sessionExpiresAt === "number" &&
-          token.sessionExpiresAt <= now);
+        isSessionExpiredAt(token.sessionExpiresAt, now);
 
       if (isExpired) {
         return { ...token, exp: 0 };
       }
 
-      // updateAge: 0 이면 매 요청 update가 발생하므로, exp를 늘리지 않고 1일 고정 만료 유지
+      // updateAge: 0 triggers frequent updates, so keep the KST midnight expiry fixed.
       if (trigger === "update") {
         return token;
       }
@@ -132,8 +137,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const now = Math.floor(Date.now() / 1000);
       const isExpired =
         (typeof token.exp === "number" && token.exp <= now) ||
-        (typeof token.sessionExpiresAt === "number" &&
-          token.sessionExpiresAt <= now);
+        isSessionExpiredAt(token.sessionExpiresAt, now);
 
       if (!token.sub || isExpired) {
         return session;

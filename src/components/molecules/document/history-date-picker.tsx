@@ -11,7 +11,7 @@ import {
   dateKeyToDate,
   dateToDateKey,
   getHistoryDateBounds,
-} from "@/lib/translation/translation-history-date";
+} from "@/lib/translation/history/translation-history-date";
 
 interface HistoryDatePickerProps {
   selectedDateKey: string;

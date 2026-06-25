@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
-import { createBookmarkFolder, updateBookmarkFolders } from "@/services/bookmark-service";
+import { createBookmarkFolder, updateBookmarkFolders } from "@/services/bookmark/bookmark-folder-service";
 import type {
   CreateBookmarkFolderPayload,
   UpdateBookmarkFoldersPayload,

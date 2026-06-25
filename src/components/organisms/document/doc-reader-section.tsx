@@ -47,7 +47,12 @@ export const DocReaderSection = (): ReactElement => {
 
   const [urlInput, setUrlInput] = useState<string>("");
   const [textInput, setTextInput] = useState<string>("");
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
   const [historyRefreshKey, setHistoryRefreshKey] = useState<number>(0);
+  const urlInputRef = useRef<HTMLInputElement | null>(null);
+  const textInputRef = useRef<HTMLTextAreaElement | null>(null);
   const translationResultRef = useRef<HTMLDivElement>(null);
   const wasLoadingRef = useRef<boolean>(false);
 
@@ -77,20 +82,52 @@ export const DocReaderSection = (): ReactElement => {
   const handleUrlInputChange = (value: string): void => {
     setUrlInput(value);
 
-    if (!value.trim()) {
+    if (value.trim()) {
+      setValidationMessage(null);
+    } else {
       clearErrorMessage();
     }
+  };
+
+  const handleTextInputChange = (value: string): void => {
+    setTextInput(value);
+
+    if (value.trim()) {
+      setValidationMessage(null);
+    }
+  };
+
+  const handleModeChange = (nextMode: DocInputMode): void => {
+    changeMode(nextMode);
+    setValidationMessage(null);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
 
-    if (mode === "url" && urlInput.trim()) {
-      void readFromUrl(urlInput.trim());
+    const trimmedUrl = urlInput.trim();
+    const trimmedText = textInput.trim();
+
+    if (mode === "url" && !trimmedUrl) {
+      setValidationMessage("번역할 문서 URL을 입력해주세요.");
+      urlInputRef.current?.focus();
+      return;
     }
 
-    if (mode === "text" && textInput.trim()) {
-      void readFromText(textInput.trim());
+    if (mode === "text" && !trimmedText) {
+      setValidationMessage("읽을 텍스트를 입력해주세요.");
+      textInputRef.current?.focus();
+      return;
+    }
+
+    setValidationMessage(null);
+
+    if (mode === "url") {
+      void readFromUrl(trimmedUrl);
+    }
+
+    if (mode === "text") {
+      void readFromText(trimmedText);
     }
   };
 
@@ -152,7 +189,7 @@ export const DocReaderSection = (): ReactElement => {
                     type="button"
                     role="tab"
                     aria-selected={mode === inputMode.id}
-                    onClick={() => changeMode(inputMode.id)}
+                    onClick={() => handleModeChange(inputMode.id)}
                     className={clsx(
                       "relative z-10 rounded-md px-4 py-2 text-sm font-semibold transition-colors duration-200",
                       mode === inputMode.id
@@ -165,7 +202,11 @@ export const DocReaderSection = (): ReactElement => {
                 ))}
               </div>
 
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <form
+                noValidate
+                onSubmit={handleSubmit}
+                className="flex flex-col gap-4"
+              >
                 <div
                   key={mode}
                   className="doc-reader-field-transition"
@@ -174,25 +215,50 @@ export const DocReaderSection = (): ReactElement => {
                   {mode === "url" ? (
                     <input
                       type="url"
+                      ref={urlInputRef}
                       value={urlInput}
                       onChange={(event) =>
                         handleUrlInputChange(event.target.value)
                       }
                       placeholder="https://example.com/docs"
-                      required
                       disabled={isLoading}
-                      className="doc-reader-field doc-reader-field--url"
+                      aria-invalid={Boolean(validationMessage)}
+                      aria-describedby={
+                        validationMessage ? "doc-reader-validation" : undefined
+                      }
+                      className={clsx(
+                        "doc-reader-field doc-reader-field--url",
+                        validationMessage && "doc-reader-field--invalid",
+                      )}
                     />
                   ) : (
                     <textarea
+                      ref={textInputRef}
                       value={textInput}
-                      onChange={(event) => setTextInput(event.target.value)}
+                      onChange={(event) =>
+                        handleTextInputChange(event.target.value)
+                      }
                       placeholder="읽을 텍스트를 붙여넣어 주세요."
-                      required
                       disabled={isLoading}
                       rows={10}
-                      className="font-doc-body memo-lines doc-reader-field doc-reader-field--textarea"
+                      aria-invalid={Boolean(validationMessage)}
+                      aria-describedby={
+                        validationMessage ? "doc-reader-validation" : undefined
+                      }
+                      className={clsx(
+                        "font-doc-body memo-lines doc-reader-field doc-reader-field--textarea",
+                        validationMessage && "doc-reader-field--invalid",
+                      )}
                     />
+                  )}
+                  {validationMessage && (
+                    <p
+                      id="doc-reader-validation"
+                      role="alert"
+                      className="doc-reader-validation-message font-doc-aux"
+                    >
+                      {validationMessage}
+                    </p>
                   )}
                 </div>
 
@@ -240,11 +306,12 @@ export const DocReaderSection = (): ReactElement => {
             </div>
           </div>
 
-          {translationResult && !isLoading && (
+          {translationResult && (
             <div ref={translationResultRef} className="overflow-visible">
               <TranslationResultSection
                 result={translationResult}
                 isMemoTilted
+                onClose={clearTranslationResult}
               />
             </div>
           )}

@@ -1,4 +1,4 @@
-import { normalizeSummaryTerms } from "@/lib/translation/summary-terms-normalizer";
+import { normalizeSummaryTerms } from "@/lib/translation/markup/summary-terms-normalizer";
 import type { KeywordTerm } from "@/types/translation";
 
 const normalizeTerm = (term: string): string => {
@@ -11,36 +11,8 @@ const isValidTerm = (term: string): boolean => {
   return /[A-Za-z가-힣]/.test(term);
 };
 
-const buildDescription = (
-  term: string,
-  sourceText: string,
-  translatedText: string,
-): string => {
-  const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const englishMatch = sourceText
-    .match(
-      new RegExp(
-        `[^.!?\\n]{0,120}\\b${escapedTerm}\\b[^.!?\\n]{0,120}[.!?]?`,
-        "i",
-      ),
-    )
-    ?.[0]
-    ?.trim();
-
-  if (englishMatch && englishMatch.length > term.length + 8) {
-    return englishMatch;
-  }
-
-  const koreanMatch = translatedText
-    .match(new RegExp(`[^.!?\\n]{0,80}${escapedTerm}[^.!?\\n]{0,80}`, "i"))
-    ?.[0]
-    ?.trim();
-
-  if (koreanMatch && koreanMatch.length > term.length + 4) {
-    return koreanMatch;
-  }
-
-  return `${term}에 대한 핵심 개념입니다.`;
+const buildConceptDescription = (): string => {
+  return `프론트엔드 실무에서 자주 쓰이는 기술 개념으로, **아키텍처·구현·설정 판단의 기준**이 됩니다.`;
 };
 
 export const extractKeywordTermsFallback = (
@@ -66,7 +38,7 @@ export const extractKeywordTermsFallback = (
 
     uniqueTerms.set(normalizedKey, {
       term,
-      description: buildDescription(term, originalContent, translatedContent),
+      description: buildConceptDescription(),
       isCoreKeyword: false,
     });
   });

@@ -1,4 +1,4 @@
-import { needsTranslation } from "@/lib/translation/translate-content";
+import { needsTranslation } from "@/lib/translation/engine/translate-content";
 
 export const shouldPersistTranslation = (
   originalContent: string,

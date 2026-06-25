@@ -1,0 +1,18 @@
+export const CODE_EXAMPLE_PROMPT_RULES = [
+  "코드 예제 규칙 (preservedCodeBlocks 또는 원문 코드가 있을 때):",
+  "- codeExamples는 빈 배열로 두지 마세요. 최소 2개, 코드 블록이 많으면 3~6개까지 작성합니다.",
+  "- 각 항목은 완결된 한국어 문장 1개입니다. 파일/명령/설정/역할을 함께 담습니다.",
+  "- '코드가 있다' 수준의 뭉뚱그린 설명은 금지합니다.",
+  "",
+  "각 코드 블록마다 반영:",
+  "1) 파일/경로/명령 (app/page.tsx, middleware.ts, next.config.js, Terminal)",
+  "2) 무엇을 만들거나 바꾸는지",
+  "3) 핵심 export, 함수, 옵션, props, 설정 키",
+  "4) 추가 설정·플래그·의존성·환경 조건",
+  "5) pnpm/npm/yarn/bun 명령 차이와 공통 목적",
+  "",
+  "작성 형식:",
+  '- `[app/page.tsx] ...`, `[Terminal] ...` 형식의 맥락 태그 사용',
+  "- 중요 옵션·필수 설정은 **...**로 강조",
+  "- 코드 예제가 없을 때만 codeExamples를 빈 배열로 둡니다.",
+].join("\n");

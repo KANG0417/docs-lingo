@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import type { DragEvent, ReactElement } from "react";
 import { BOOKMARK_DRAG_DOCUMENT_ID_MIME } from "@/constants/bookmark";
-import { formatHistoryListDate } from "@/lib/translation/translation-history-date";
+import { formatHistoryListDate } from "@/lib/translation/history/translation-history-date";
 import type { BookmarkListItem } from "@/types/bookmark";
 
 interface BookmarkListItemRowProps {

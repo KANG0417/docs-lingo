@@ -1,21 +1,29 @@
 import {
   buildOriginalContent,
   prepareAiInput,
+  prepareSummaryAiInput,
 } from "@/lib/document-pipeline/prepare-ai-input";
+import { classifyDocumentType } from "@/lib/document-pipeline/classify-document-type";
+import { filterImportantParagraphs } from "@/lib/document-pipeline/filter-importance";
+import { splitMarkdownParagraphs } from "@/lib/document-pipeline/split-markdown-paragraphs";
 import { splitParagraphs } from "@/lib/document-pipeline/split-paragraphs";
 import { extractDocumentCodeBlocksFromMarkdown } from "@/lib/document/extract-document-code-blocks-from-markdown";
-import { stripMarkdownCodeFences } from "@/lib/document/strip-markdown-code-fences";
+import {
+  containsMarkdownCodeFences,
+  stripMarkdownCodeFences,
+} from "@/lib/document/strip-markdown-code-fences";
 import { buildTextDocumentUrl } from "@/lib/document/text-document-url";
-import { DEFAULT_TEXT_DOCUMENT_TITLE } from "@/lib/translation/generate-text-document-title";
+import { mergePreservedCodeBlocksForClaude } from "@/lib/document-pipeline/merge-preserved-code-blocks";
+import { DEFAULT_TEXT_DOCUMENT_TITLE } from "@/lib/translation/engine/generate-text-document-title";
 import { TranslationError } from "@/lib/translation/translation-errors";
-import type { RefinedDocument, RefinedParagraph } from "@/types/document-pipeline";
+import type { RefinedDocument } from "@/types/document-pipeline";
 
-const buildRefinedParagraphs = (textContent: string): RefinedParagraph[] => {
-  return splitParagraphs(textContent).map((paragraph, index) => ({
-    index: index + 1,
-    text: paragraph,
-    score: 1,
-  }));
+const buildRawParagraphs = (text: string): string[] => {
+  if (containsMarkdownCodeFences(text) || /^#{1,3}\s/m.test(text)) {
+    return splitMarkdownParagraphs(stripMarkdownCodeFences(text));
+  }
+
+  return splitParagraphs(stripMarkdownCodeFences(text));
 };
 
 export const refineDocumentFromText = (
@@ -34,8 +42,24 @@ export const refineDocumentFromText = (
   }
 
   const documentCodeBlocks = extractDocumentCodeBlocksFromMarkdown(trimmedText);
-  const proseText = stripMarkdownCodeFences(trimmedText);
-  const paragraphs = buildRefinedParagraphs(proseText);
+  const paragraphs = filterImportantParagraphs(buildRawParagraphs(trimmedText));
+  const documentUrl = buildTextDocumentUrl(trimmedText);
+  const proseForClaude = paragraphs.map((paragraph) => paragraph.text).join("\n\n");
+  const claudeTranslationRequest = {
+    documentType: classifyDocumentType({
+      url: documentUrl,
+      title: documentTitle,
+      extractedText: proseForClaude,
+    }),
+    sourceTitle: documentTitle,
+    sourceUrl: documentUrl,
+    extractedText: proseForClaude.slice(0, 10000),
+    preservedCodeBlocks: mergePreservedCodeBlocksForClaude(
+      [],
+      documentCodeBlocks,
+    ),
+    glossary: [],
+  };
 
   if (paragraphs.length === 0 && documentCodeBlocks.length === 0) {
     throw new TranslationError(
@@ -56,6 +80,14 @@ export const refineDocumentFromText = (
     paragraphs,
     [],
     documentCodeBlocks,
+    "markdown",
+  );
+  const summaryAiInput = prepareSummaryAiInput(
+    documentTitle,
+    paragraphs,
+    [],
+    documentCodeBlocks,
+    "markdown",
   );
 
   return {
@@ -68,5 +100,9 @@ export const refineDocumentFromText = (
     documentCodeBlocks,
     originalContent,
     aiInput,
+    summaryAiInput,
+    extractionSource: "markdown",
+    documentType: claudeTranslationRequest.documentType,
+    claudeTranslationRequest,
   };
 };
